@@ -1,6 +1,6 @@
-// lib/core/models/detail_pembayaran_model.dart
+// lib/core/models/pembayaran_model.dart
 
-class DetailPembayaran {
+class Pembayaran {
   final int id;
   final int pemesananId;
   final double jumlahBayar;
@@ -9,7 +9,7 @@ class DetailPembayaran {
   final String statusPembayaran; // 'menunggu_verifikasi', 'terverifikasi', 'gagal'
   final String? buktiTransfer; // URL atau path bukti transfer
 
-  DetailPembayaran({
+  Pembayaran({
     required this.id,
     required this.pemesananId,
     required this.jumlahBayar,
@@ -19,11 +19,14 @@ class DetailPembayaran {
     this.buktiTransfer,
   });
 
-  factory DetailPembayaran.fromJson(Map<String, dynamic> json) {
-    return DetailPembayaran(
+  // Factory constructor untuk membuat objek Pembayaran dari JSON
+  factory Pembayaran.fromJson(Map<String, dynamic> json) {
+    return Pembayaran(
       id: json['id'] as int,
       pemesananId: json['pemesanan_id'] as int,
-      jumlahBayar: double.parse(json['jumlah_bayar'].toString()),
+      // Penting: Pastikan parsing ke double
+      jumlahBayar: double.parse(json['jumlah_bayar'].toString()), 
+      // Penting: Pastikan parsing ke DateTime
       tanggalPembayaran: DateTime.parse(json['tanggal_pembayaran'] as String),
       metodePembayaran: json.containsKey('metode_pembayaran') ? json['metode_pembayaran'] as String? : null,
       statusPembayaran: json['status_pembayaran'] as String,
@@ -31,12 +34,13 @@ class DetailPembayaran {
     );
   }
 
+  // Method untuk mengonversi objek Pembayaran ke JSON (jika diperlukan untuk PUT/POST)
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'pemesanan_id': pemesananId,
       'jumlah_bayar': jumlahBayar,
-      'tanggal_pembayaran': tanggalPembayaran.toIso8601String(),
+      'tanggal_pembayaran': tanggalPembayaran.toIso8601String(), // ISO 8601 string untuk DateTime
       'metode_pembayaran': metodePembayaran,
       'status_pembayaran': statusPembayaran,
       'bukti_transfer': buktiTransfer,
