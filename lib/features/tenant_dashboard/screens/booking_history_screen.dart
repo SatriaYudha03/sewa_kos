@@ -1,15 +1,15 @@
-// lib/features/tenant_dashboard/screens/kos_list_screen.dart
+// lib/features/tenant_dashboard/screens/booking_history_screen.dart
 import 'package:flutter/material.dart';
 import 'package:sewa_kos/core/constants/app_constants.dart';
 
-class KosListScreen extends StatelessWidget {
-  const KosListScreen({super.key});
+class BookingHistoryScreen extends StatelessWidget {
+  const BookingHistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cari Kos'),
+        title: const Text('Riwayat Pemesanan'),
         backgroundColor: AppConstants.primaryColor,
         foregroundColor: Colors.white,
       ),
@@ -17,10 +17,10 @@ class KosListScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search, size: 80, color: Colors.grey),
+            Icon(Icons.history, size: 80, color: Colors.grey),
             SizedBox(height: 20),
             Text(
-              'Di sini penyewa akan mencari dan melihat daftar kos.',
+              'Riwayat pemesanan kos Anda akan muncul di sini.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16, color: Colors.grey),
             ),

@@ -131,4 +131,24 @@ class AuthService {
     }
     return {'Content-Type': 'application/json'}; // Default jika belum login
   }
+
+  Future<User?> getUserProfile(int userId) async {
+    final url = Uri.parse("$_baseUrl/auth/profile.php"); // Gunakan endpoint profile
+    
+    try {
+      final headers = await getAuthHeaders(); // Perlu header otorisasi
+      final response = await http.get(url, headers: headers);
+      final responseBody = json.decode(response.body);
+
+      if (response.statusCode == 200 && responseBody['status'] == 'success') {
+        return User.fromJson(responseBody['data']); // Mengembalikan objek User
+      } else {
+        print('Error fetching user profile: ${responseBody['message']}');
+        return null;
+      }
+    } catch (e) {
+      print('Error during getUserProfile: $e');
+      return null;
+    }
+  }
 }

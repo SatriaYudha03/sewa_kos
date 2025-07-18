@@ -1,15 +1,14 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Pastikan sudah di pubspec.yaml
-
-import 'core/services/auth_service.dart'; // Import AuthService
-import 'features/auth/screens/login_screen.dart'; // Import LoginScreen
-import 'features/tenant_dashboard/screens/tenant_home_screen.dart'; // Akan dibuat nanti
-import 'features/owner_dashboard/screens/owner_home_screen.dart';   // Akan dibuat nanti
-import 'core/models/user_model.dart'; // Import UserModel
+import 'package:shared_preferences/shared_preferences.dart'; // Pastikan sudah ada di pubspec.yaml
+import 'package:sewa_kos/core/services/auth_service.dart'; // Import AuthService
+import 'package:sewa_kos/features/auth/screens/login_screen.dart'; // Import LoginScreen
+import 'package:sewa_kos/features/shared_features/screens/main_app_shell.dart'; // Import MainAppShell
+import 'package:sewa_kos/core/models/user_model.dart'; // Import UserModel
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized(); // Penting untuk inisialisasi SharedPreferences
+  // Pastikan Flutter binding terinisialisasi sebelum mengakses platform services
+  WidgetsFlutterBinding.ensureInitialized(); 
   runApp(const SewaKosApp());
 }
 
@@ -19,27 +18,25 @@ class SewaKosApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Sewa Kos',
-      debugShowCheckedModeBanner: false,
+      title: 'Aplikasi Sewa Kos',
+      debugShowCheckedModeBanner: false, // Untuk menyembunyikan banner "DEBUG"
       theme: ThemeData(
-        primarySwatch: Colors.blue, // Sesuaikan dengan tema aplikasi Anda
-        visualDensity: VisualDensity.adaptivePlatformDensity,
+        primarySwatch: Colors.blue, // Tema warna utama aplikasi
+        visualDensity: VisualDensity.adaptivePlatformDensity, // Mengatur kepadatan visual sesuai platform
       ),
-      home: const SplashScreen(), // Mulai dengan SplashScreen
+      home: const SplashScreen(), // Aplikasi dimulai dari SplashScreen
       // Named routes (opsional, tapi bagus untuk navigasi kompleks)
       routes: {
         '/login': (context) => const LoginScreen(),
-        // Anda bisa menambahkan rute untuk register_screen, home_penyewa, home_pemilik di sini
-        // '/register': (context) => const RegisterScreen(),
-        // '/tenant_home': (context) => const TenantHomeScreen(),
-        // '/owner_home': (context) => const OwnerHomeScreen(),
+        // Rute lain bisa ditambahkan di sini, misalnya untuk register jika tidak langsung dari login
+        // '/register': (context) => const RegisterScreen(), 
       },
     );
   }
 }
 
 // ======================= SPLASH SCREEN ==========================
-// Kita ambil SplashScreen dari kode teman Anda dan sesuaikan
+// Widget SplashScreen untuk menampilkan animasi pembuka
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -48,7 +45,7 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin { // Mixin untuk AnimationController
   late AnimationController _controller;
   late Animation<double> _pinDropAnimation;
   late Animation<double> _pinBounceAnimation;
@@ -57,38 +54,38 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _textFadeAnimation;
   late Animation<Offset> _textSlideAnimation;
 
-  final AuthService _authService = AuthService(); // Inisialisasi AuthService
+  final AuthService _authService = AuthService(); // Instance AuthService untuk cek login
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       duration: const Duration(milliseconds: 3000), // Total durasi animasi
-      vsync: this,
+      vsync: this, // Menghubungkan controller dengan VSync provider
     );
 
-    // ... (Animasi lainnya tetap sama seperti kode teman Anda)
-    // Fase 1: Pin Jatuh dan Memantul (0ms - 1200ms)
+    // Fase 1: Pin Jatuh (0% - 40% durasi)
     _pinDropAnimation = CurvedAnimation(
       parent: _controller,
       curve: const Interval(0.0, 0.4, curve: Curves.easeOut),
     );
+    // Efek memantul untuk pin
     _pinBounceAnimation = CurvedAnimation(
       parent: _controller,
-      curve: Interval(
+      curve: Interval( // Hapus 'const' karena .flipped bukanlah konstanta kompilasi
         0.0,
         0.4,
-        curve: Curves.elasticOut.flipped,
-      ), // Efek memantul
+        curve: Curves.elasticOut.flipped, // Efek memantul terbalik
+      ),
     );
 
-    // Fase 2: Lingkaran Membesar & Pin Menghilang (1000ms - 1800ms)
+    // Fase 2: Lingkaran Membesar & Pin Menghilang (30% - 60% durasi)
     _circleScaleAnimation = CurvedAnimation(
       parent: _controller,
       curve: const Interval(0.3, 0.6, curve: Curves.easeInOut),
     );
 
-    // Fase 3: Rumah dan Teks Muncul (1500ms - 2500ms)
+    // Fase 3: Rumah dan Teks Muncul (50% - 90% durasi)
     _houseFadeAnimation = CurvedAnimation(
       parent: _controller,
       curve: const Interval(0.5, 0.8, curve: Curves.easeIn),
@@ -100,8 +97,8 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     _textSlideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.5),
-      end: Offset.zero,
+      begin: const Offset(0, 0.5), // Mulai dari bawah sedikit
+      end: Offset.zero, // Berakhir di posisi aslinya
     ).animate(
       CurvedAnimation(
         parent: _controller,
@@ -109,53 +106,44 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-    // Menjalankan navigasi setelah animasi selesai
+    // Tambahkan listener untuk navigasi setelah animasi selesai
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        // Pindahkan logika pengecekan login di sini
-        _navigateToNextScreen();
+        _navigateToNextScreen(); // Panggil fungsi navigasi
       }
     });
 
-    // Mulai animasi
-    _controller.forward();
+    _controller.forward(); // Mulai animasi
   }
 
-  // --- Fungsi Baru: Mengecek status login dan navigasi ---
+  // Fungsi untuk mengecek status login dan navigasi ke layar selanjutnya
   Future<void> _navigateToNextScreen() async {
-    final user = await _authService.getLoggedInUser();
-    Widget nextScreen;
+    final user = await _authService.getLoggedInUser(); // Cek user yang tersimpan
+    Widget nextScreen; // Widget layar tujuan
 
     if (user != null) {
-      // User sudah login, arahkan ke dashboard sesuai role
-      if (user.roleName == 'penyewa') {
-        nextScreen = const TenantHomeScreen();
-      } else if (user.roleName == 'pemilik_kos') {
-        nextScreen = const OwnerHomeScreen();
-      } else {
-        // Fallback jika role tidak dikenali (jarang terjadi jika role dibatasi di registrasi)
-        nextScreen = const LoginScreen();
-      }
+      // Jika user sudah login, arahkan ke MainAppShell dengan data user
+      nextScreen = MainAppShell(initialUserData: user); 
     } else {
-      // User belum login, arahkan ke LoginScreen
+      // Jika user belum login, arahkan ke LoginScreen
       nextScreen = const LoginScreen();
     }
 
-    // Navigasi dengan transisi fade
+    // Navigasi ke layar berikutnya dan hapus semua rute sebelumnya dari stack
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         pageBuilder: (_, __, ___) => nextScreen,
         transitionsBuilder: (_, animation, __, child) {
-          return FadeTransition(opacity: animation, child: child);
+          return FadeTransition(opacity: animation, child: child); // Transisi fade
         },
-        transitionDuration: const Duration(milliseconds: 800),
+        transitionDuration: const Duration(milliseconds: 800), // Durasi transisi
       ),
     );
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller.dispose(); // Pastikan controller di-dispose
     super.dispose();
   }
 
@@ -180,8 +168,9 @@ class _SplashScreenState extends State<SplashScreen>
             return Stack(
               alignment: Alignment.center,
               children: [
+                // Elemen Branding (Teks "SewaKos" dan slogan)
                 Positioned(
-                  top: screenHeight / 2 + 80,
+                  top: screenHeight / 2 + 80, // Posisikan di bawah logo
                   child: FadeTransition(
                     opacity: _textFadeAnimation,
                     child: SlideTransition(
@@ -192,7 +181,7 @@ class _SplashScreenState extends State<SplashScreen>
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(
+                              const Text( // Menggunakan const jika teks statis
                                 "Sewa",
                                 style: TextStyle(
                                   fontSize: 42,
@@ -213,11 +202,11 @@ class _SplashScreenState extends State<SplashScreen>
                             ],
                           ),
                           const SizedBox(height: 8),
-                          Text(
+                          const Text(
                             "Temukan Kos Impianmu",
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.white.withOpacity(0.8),
+                              color: Colors.white, // Gunakan Colors.white langsung atau withOpacity
                               fontStyle: FontStyle.italic,
                             ),
                           ),
@@ -226,12 +215,15 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                   ),
                 ),
+
+                // Elemen Logo (Pin, Lingkaran, Rumah)
                 SizedBox(
                   width: 120,
                   height: 120,
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
+                      // Lingkaran yang membesar
                       Transform.scale(
                         scale: _circleScaleAnimation.value,
                         child: Container(
@@ -248,6 +240,7 @@ class _SplashScreenState extends State<SplashScreen>
                           ),
                         ),
                       ),
+                      // Ikon rumah di dalam lingkaran
                       FadeTransition(
                         opacity: _houseFadeAnimation,
                         child: Icon(
@@ -256,6 +249,7 @@ class _SplashScreenState extends State<SplashScreen>
                           color: Colors.blue.shade700,
                         ),
                       ),
+                      // Ikon Pin Lokasi yang jatuh
                       Positioned(
                         top: 0,
                         child: Transform.translate(
