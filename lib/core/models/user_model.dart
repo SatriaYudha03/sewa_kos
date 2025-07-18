@@ -24,8 +24,9 @@ class User {
       username: json['username'] as String,
       email: json['email'] as String,
       roleName: json['role_name'] as String, // Pastikan nama kunci sesuai dengan respon API PHP
-      namaLengkap: json['containsKey']('nama_lengkap') ? json['nama_lengkap'] as String? : null,
-      noTelepon: json.containsKey('no_telepon') ? json['no_telepon'] as String? : null,
+      // BARIS INI DIPERBAIKI:
+      namaLengkap: json['nama_lengkap'] as String?, // Langsung ambil sebagai String?
+      noTelepon: json['no_telepon'] as String?,     // Langsung ambil sebagai String?
     );
   }
 
