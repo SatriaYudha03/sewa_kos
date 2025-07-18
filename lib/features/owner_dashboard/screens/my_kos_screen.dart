@@ -1,10 +1,10 @@
-// lib/features/owner_dashboard/screens/my_kos_screen.dart (DIUPDATE)
+// lib/features/owner_dashboard/screens/my_kos_screen.dart
 import 'package:flutter/material.dart';
-import 'package:sewa_kos/core/services/kos_service.dart';
-import 'package:sewa_kos/core/models/kos_model.dart';
-import 'package:sewa_kos/features/owner_dashboard/screens/add_edit_kos_screen.dart';
-import 'package:sewa_kos/core/constants/app_constants.dart';
-import 'package:sewa_kos/features/owner_dashboard/screens/kamar_management_screen.dart';
+import 'package:sewa_kos/core/services/kos_service.dart'; // Sesuaikan import
+import 'package:sewa_kos/core/models/kos_model.dart'; // Sesuaikan import
+import 'package:sewa_kos/features/owner_dashboard/screens/add_edit_kos_screen.dart'; // Sesuaikan import
+import 'package:sewa_kos/core/constants/app_constants.dart'; // Sesuaikan import
+import 'package:sewa_kos/features/owner_dashboard/screens/kamar_management_screen.dart'; // Sesuaikan import
 
 class MyKosScreen extends StatefulWidget {
   const MyKosScreen({super.key});
@@ -15,7 +15,7 @@ class MyKosScreen extends StatefulWidget {
 
 class _MyKosScreenState extends State<MyKosScreen> {
   final KosService _kosService = KosService();
-  Future<List<Kos>>? _myKosFuture;
+  Future<List<Kos>>? _myKosFuture; // Future untuk menampung hasil fetch data
 
   @override
   void initState() {
@@ -23,24 +23,27 @@ class _MyKosScreenState extends State<MyKosScreen> {
     _fetchMyKos();
   }
 
+  // Fungsi untuk mengambil daftar kos milik user
   Future<void> _fetchMyKos() async {
     setState(() {
-      _myKosFuture = _kosService.getListKos();
+      _myKosFuture = _kosService.getListKos(); // KosService akan memfilter berdasarkan role_id
     });
   }
 
+  // Fungsi untuk menangani penambahan/pengeditan kos dan refresh daftar
   Future<void> _navigateToAddEditKos({Kos? kos}) async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => AddEditKosScreen(kos: kos)),
     );
 
+    // Jika ada perubahan (kos baru ditambahkan/diedit), refresh daftar
     if (result == true) {
       _fetchMyKos();
     }
   }
   
-  // <-- FUNGSI BARU: Navigasi ke manajemen kamar -->
+  // Fungsi untuk navigasi ke manajemen Kamar
   Future<void> _navigateToKamarManagement(Kos kos) async {
     final result = await Navigator.push(
       context,
@@ -52,7 +55,6 @@ class _MyKosScreenState extends State<MyKosScreen> {
     //   _fetchMyKos(); 
     // }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -80,31 +82,43 @@ class _MyKosScreenState extends State<MyKosScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.home, size: 80, color: Colors.grey),
-                  SizedBox(height: 20),
-                  Text(
+                  const Icon(Icons.home, size: 80, color: Colors.grey), // Menggunakan Icons.home
+                  const SizedBox(height: 20),
+                  const Text(
                     'Anda belum memiliki properti kos.',
                     style: TextStyle(fontSize: 18, color: Colors.grey),
                     textAlign: TextAlign.center,
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   ElevatedButton.icon(
                     onPressed: () => _navigateToAddEditKos(),
-                    icon: Icon(Icons.add_home),
-                    label: Text('Tambah Kos Baru'),
+                    icon: const Icon(Icons.add_home),
+                    label: const Text('Tambah Kos Baru'),
                     style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     ),
                   ),
                 ],
               ),
             );
           } else {
+            // Tampilkan daftar kos
             return ListView.builder(
               padding: const EdgeInsets.all(8.0),
               itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
                 final kos = snapshot.data![index];
+
+                ImageProvider? backgroundImage;
+                // Construct full image URL for NetworkImage
+                if (kos.fotoUtama != null && kos.fotoUtama!.isNotEmpty) {
+                  final fullImageUrl = '${AppConstants.baseUrl}${kos.fotoUtama!}';
+                  print('DEBUG_IMAGE_URL: Mencoba memuat gambar dari: $fullImageUrl'); // DEBUGGING PRINT
+                  backgroundImage = NetworkImage(fullImageUrl);
+                } else {
+                  backgroundImage = const AssetImage(AppConstants.imageAssetPlaceholderKos);
+                }
+
                 return Card(
                   margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
                   elevation: 4,
@@ -114,13 +128,12 @@ class _MyKosScreenState extends State<MyKosScreen> {
                     leading: CircleAvatar(
                       radius: 30,
                       backgroundColor: Colors.blue.shade100,
-                      backgroundImage: kos.fotoUtama != null && kos.fotoUtama!.isNotEmpty
-                          ? NetworkImage(kos.fotoUtama!) as ImageProvider
-                          : const AssetImage(AppConstants.imageAssetPlaceholderKos),
+                      backgroundImage: backgroundImage, // Menggunakan ImageProvider yang sudah di-handle URL-nya
                       onBackgroundImageError: (exception, stackTrace) {
-                        print('Error loading image for ${kos.namaKos}: $exception');
+                        print('ERROR_IMAGE_LOAD: Gagal memuat gambar untuk ${kos.namaKos}: $exception');
+                        // Anda bisa mengganti gambar ke placeholder jika error
                       },
-                      child: kos.fotoUtama == null || kos.fotoUtama!.isEmpty
+                      child: (kos.fotoUtama == null || kos.fotoUtama!.isEmpty) && backgroundImage is AssetImage
                           ? Icon(Icons.apartment, size: 30, color: AppConstants.primaryColor)
                           : null,
                     ),
@@ -144,7 +157,7 @@ class _MyKosScreenState extends State<MyKosScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         // Tombol untuk manajemen Kamar
-                        IconButton( // <-- TOMBOL BARU
+                        IconButton(
                           icon: const Icon(Icons.meeting_room, color: Colors.indigo),
                           onPressed: () => _navigateToKamarManagement(kos),
                           tooltip: 'Kelola Kamar',
@@ -217,19 +230,19 @@ class _MyKosScreenState extends State<MyKosScreen> {
       if (mounted) {
         if (response['status'] == 'success') {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(response['message'] ?? 'Kos berhasil dihapus.'), backgroundColor: Colors.green),
+            SnackBar(content: Text(response['message'] ?? 'Kos berhasil dihapus.'), backgroundColor: AppConstants.successColor),
           );
           _fetchMyKos();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(response['message'] ?? 'Gagal menghapus kos.'), backgroundColor: Colors.red),
+            SnackBar(content: Text(response['message'] ?? 'Gagal menghapus kos.'), backgroundColor: AppConstants.errorColor),
           );
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red),
+          SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: AppConstants.errorColor),
         );
       }
     }

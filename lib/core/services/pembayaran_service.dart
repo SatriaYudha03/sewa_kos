@@ -1,69 +1,88 @@
-// lib/core/services/pembayaran_service.dart
-import 'package:http/http.dart' as http;
+// lib/core/services/pembayaran_service.dart (DIUPDATE)
 import 'dart:convert';
-import '../../app_constants.dart'; // Import AppConstants
-import '../models/pembayaran_model.dart'; // Import PembayaranModel
-import 'auth_service.dart'; // Import AuthService untuk mendapatkan header otorisasi
+import 'package:http/http.dart' as http;
+import 'package:sewa_kos/core/constants/app_constants.dart';
+import 'package:sewa_kos/core/services/auth_service.dart';
+import 'package:image_picker/image_picker.dart'; // Untuk XFile
+import 'package:sewa_kos/core/models/user_model.dart'; // Import UserModel untuk getLoggedInUser
+import 'package:sewa_kos/core/models/pembayaran_model.dart'; // Pastikan ini juga diimpor jika digunakan di metode lain di service ini
 
 class PembayaranService {
-  final String _baseUrl = AppConstants.baseUrl;
-  final AuthService _authService = AuthService(); // Inisialisasi AuthService
+  final String _baseUrl = AppConstants.baseUrl; // Menggunakan AppConstants.baseUrl
+  final AuthService _authService = AuthService();
 
-  // Method untuk MENGUNGGAH BUKTI PEMBAYARAN
-  // API PHP: api/pembayaran/upload_proof.php
-  // Catatan: 'imagePath' diasumsikan adalah path file lokal atau base64 string
-  // Jika Anda menggunakan file upload, Anda mungkin perlu menggunakan package 'http' multipart request.
-  // Untuk kesederhanaan awal, kita asumsikan base64 string atau URL gambar yang sudah diupload.
+  // Metode untuk mengunggah bukti pembayaran
   Future<Map<String, dynamic>> uploadPaymentProof({
     required int pemesananId,
-    required String paymentMethod, // Misal: 'transfer_bank', 'ewallet'
-    required String proofImageUrl, // URL gambar bukti pembayaran atau base64 string
+    required double jumlahBayar,
+    required String metodePembayaran,
+    required XFile buktiPembayaranFile, // Menggunakan XFile dari image_picker
   }) async {
-    final url = Uri.parse("$_baseUrl/pembayaran/upload_proof.php");
-    
+    // --- PERBAIKAN DI SINI ---
+    final User? currentUser = await _authService.getLoggedInUser(); // Dapatkan objek User yang login
+    final Map<String, String> authHeaders = await _authService.getAuthHeaders(); // Dapatkan semua header otorisasi
+
+    if (currentUser == null) { // Jika user tidak login
+      return {'status': 'error', 'message': 'Autentikasi diperlukan. Silakan login kembali.'};
+    }
+
+    final uri = Uri.parse('$_baseUrl/pembayaran/upload_proof.php'); // URL lengkap ke endpoint PHP
+    var request = http.MultipartRequest('POST', uri)
+      // Tambahkan headers yang sudah didapat dari AuthService
+      ..headers.addAll(authHeaders) // Menambahkan semua headers sekaligus
+      // Tambahkan fields data
+      ..fields['pemesanan_id'] = pemesananId.toString()
+      ..fields['jumlah_bayar'] = jumlahBayar.toString()
+      ..fields['metode_pembayaran'] = metodePembayaran;
+
+    // Tambahkan file ke request
+    // Pastikan field name 'bukti_pembayaran' sesuai dengan $_FILES di PHP
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'bukti_pembayaran', // Nama field di PHP ($_FILES['bukti_pembayaran'])
+        buktiPembayaranFile.path,
+        filename: buktiPembayaranFile.name,
+      ),
+    );
+    // --- AKHIR PERBAIKAN ---
+
     try {
-      final headers = await _authService.getAuthHeaders(); // Dapatkan header otorisasi
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
 
-      final response = await http.post(
-        url,
-        headers: headers, // Gunakan header otorisasi
-        body: json.encode({
-          'pemesanan_id': pemesananId,
-          'metode_pembayaran': paymentMethod,
-          'bukti_pembayaran_url': proofImageUrl,
-        }),
-      );
+      final responseBody = json.decode(response.body); // Dekode respons
 
-      final responseBody = json.decode(response.body);
-
-      if (response.statusCode == 200 && responseBody['status'] == 'success') {
-        return {'status': 'success', 'message': responseBody['message'], 'data': responseBody['data']};
+        if (response.statusCode == 200) { // Cek status HTTP 200 OK
+        return responseBody; // Kembalikan seluruh body respons
       } else {
-        return {'status': 'error', 'message': responseBody['message'] ?? 'Failed to upload payment proof.'};
+        // Tangani error HTTP
+        // errorBody sudah sama dengan responseBody
+        return {'status': 'error', 'message': responseBody['message'] ?? 'Gagal mengunggah bukti pembayaran. Status: ${response.statusCode}'};
       }
     } catch (e) {
-      print('Error during uploadPaymentProof: $e');
-      return {'status': 'error', 'message': 'Failed to connect to server. Please try again later.'};
+      // Tangani error koneksi atau lainnya
+      print('Error during uploadPaymentProof: $e'); // Log error untuk debugging
+      return {'status': 'error', 'message': 'Terjadi kesalahan koneksi: ${e.toString()}'};
     }
   }
 
-  // Method untuk VERIFIKASI PEMBAYARAN (hanya untuk pemilik_kos)
+  // Metode untuk VERIFIKASI PEMBAYARAN (hanya untuk pemilik_kos)
   // API PHP: api/pembayaran/verify.php
   Future<Map<String, dynamic>> verifyPayment({
     required int pembayaranId,
     required String statusPembayaran, // Misal: 'terverifikasi', 'ditolak'
   }) async {
-    final url = Uri.parse("$_baseUrl/pembayaran/verify.php");
+    final url = Uri.parse("$_baseUrl/verify.php"); // Sesuaikan URL
     
     try {
       final headers = await _authService.getAuthHeaders(); // Dapatkan header otorisasi
 
-      final response = await http.post(
+      final response = await http.put( // Menggunakan PUT method
         url,
         headers: headers,
         body: json.encode({
-          'pembayaran_id': pembayaranId,
-          'status_pembayaran': statusPembayaran,
+          'id': pembayaranId, // Mengirim ID sebagai 'id'
+          'status': statusPembayaran, // Mengirim status sebagai 'status'
         }),
       );
 
@@ -72,18 +91,19 @@ class PembayaranService {
       if (response.statusCode == 200 && responseBody['status'] == 'success') {
         return {'status': 'success', 'message': responseBody['message']};
       } else {
-        return {'status': 'error', 'message': responseBody['message'] ?? 'Failed to verify payment.'};
+        return {'status': 'error', 'message': responseBody['message'] ?? 'Gagal memverifikasi pembayaran.'};
       }
     } catch (e) {
       print('Error during verifyPayment: $e');
-      return {'status': 'error', 'message': 'Failed to connect to server. Please try again later.'};
+      return {'status': 'error', 'message': 'Gagal terhubung ke server. Silakan coba lagi.'};
     }
   }
+
 
   // Method untuk MENGAMBIL DAFTAR PEMBAYARAN berdasarkan ID Pemesanan
   // API PHP: api/pembayaran/list_by_pemesanan.php?pemesanan_id={pemesanan_id}
   Future<List<Pembayaran>> getPaymentsByPemesananId(int pemesananId) async {
-    final url = Uri.parse("$_baseUrl/pembayaran/list_by_pemesanan.php?pemesanan_id=$pemesananId");
+    final url = Uri.parse("$_baseUrl/list_by_pemesanan.php?pemesanan_id=$pemesananId");
     
     try {
       final headers = await _authService.getAuthHeaders(); // Dapatkan header otorisasi
@@ -107,6 +127,4 @@ class PembayaranService {
       return [];
     }
   }
-
-  // TODO: Tambahkan method lain jika ada API pembayaran lain yang akan dibuat (misal: getPaymentDetail)
 }

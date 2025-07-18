@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class AppConstants {
   // --- API Constants ---
-  static const String baseUrl = 'http://192.168.178.27/sewa_kos_api/'; // Pastikan ini IP yang benar
+  static const String baseUrl = 'http://192.168.178.27/sewa_kos_api'; // Pastikan ini IP yang benar
   static const Duration apiTimeout = Duration(seconds: 20);
 
   // --- App Info Constants ---

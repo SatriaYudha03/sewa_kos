@@ -16,7 +16,7 @@ class PemesananService {
     required DateTime tanggalMulai,
     required int durasiSewa, // Dalam bulan
   }) async {
-    final url = Uri.parse("$_baseUrl/pemesanan/add.php");
+    final url = Uri.parse("$_baseUrl/pemesanan/create.php");
     
     try {
       final headers = await _authService.getAuthHeaders(); // Dapatkan header otorisasi
