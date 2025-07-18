@@ -1,8 +1,9 @@
-// lib/features/owner_dashboard/screens/owner_home_screen.dart
+// lib/features/owner_dashboard/screens/owner_home_screen.dart (DIUPDATE)
 import 'package:flutter/material.dart';
-import 'package:sewa_kos/core/services/auth_service.dart'; // Import AuthService
-import 'package:sewa_kos/features/auth/screens/login_screen.dart'; // Import LoginScreen
-import 'package:sewa_kos/core/models/user_model.dart'; // Import UserModel
+import 'package:sewa_kos/core/services/auth_service.dart'; // Sesuaikan import
+import 'package:sewa_kos/features/auth/screens/login_screen.dart'; // Sesuaikan import
+import 'package:sewa_kos/core/models/user_model.dart'; // Sesuaikan import
+import 'package:sewa_kos/features/owner_dashboard/screens/my_kos_screen.dart'; // <-- Import MyKosScreen
 
 class OwnerHomeScreen extends StatefulWidget {
   const OwnerHomeScreen({super.key});
@@ -73,18 +74,21 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                     style: const TextStyle(fontSize: 18),
                   ),
                   const SizedBox(height: 30),
-                  // Di sini nanti akan ada konten utama untuk pemilik kos,
-                  // seperti manajemen kos, daftar pemesanan masuk, dll.
                   ElevatedButton(
                     onPressed: () {
-                      // Contoh: Navigasi ke halaman manajemen kos
-                      // Navigator.push(context, MaterialPageRoute(builder: (context) => MyKosScreen()));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Fitur manajemen kos akan segera hadir!')),
+                      // Navigasi ke halaman manajemen kos saya
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const MyKosScreen()),
                       );
                     },
                     child: const Text('Kelola Kos Anda'),
                   ),
+                  // Anda bisa menambahkan tombol lain di sini, seperti
+                  // ElevatedButton(
+                  //   onPressed: () { /* Navigasi ke daftar pemesanan masuk */ },
+                  //   child: const Text('Lihat Pemesanan Masuk'),
+                  // ),
                 ],
               ),
       ),
