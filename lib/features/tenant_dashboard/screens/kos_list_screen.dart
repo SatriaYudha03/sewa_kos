@@ -1,9 +1,9 @@
 // lib/features/tenant_dashboard/screens/kos_list_screen.dart (DIUPDATE)
 import 'package:flutter/material.dart';
 import 'package:sewa_kos/core/constants/app_constants.dart';
-import 'package:sewa_kos/core/models/kos_model.dart'; // Import KosModel
-import 'package:sewa_kos/core/services/kos_service.dart'; // Import KosService
-import 'package:sewa_kos/features/tenant_dashboard/screens/kos_detail_screen.dart'; // Import KosDetailScreen (akan dibuat)
+import 'package:sewa_kos/core/models/kos_model.dart';
+import 'package:sewa_kos/core/services/kos_service.dart';
+import 'package:sewa_kos/features/tenant_dashboard/screens/kos_detail_screen.dart';
 
 class KosListScreen extends StatefulWidget {
   const KosListScreen({super.key});
@@ -16,16 +16,33 @@ class _KosListScreenState extends State<KosListScreen> {
   final KosService _kosService = KosService();
   Future<List<Kos>>? _kosListFuture;
 
+  final TextEditingController _searchController = TextEditingController();
+  String _currentKeyword = '';
+  double? _minPriceFilter;
+  double? _maxPriceFilter;
+  String _fasilitasFilter = ''; // Contoh: "AC,KM Dalam"
+
   @override
   void initState() {
     super.initState();
-    _fetchKosList();
+    _fetchKosList(); // Ambil semua kos awalnya
   }
 
-  // Fungsi untuk mengambil daftar kos
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // Fungsi untuk mengambil daftar kos dengan filter
   Future<void> _fetchKosList() async {
     setState(() {
-      _kosListFuture = _kosService.getListKos();
+      _kosListFuture = _kosService.searchKos(
+        keyword: _currentKeyword.isEmpty ? null : _currentKeyword,
+        minPrice: _minPriceFilter,
+        maxPrice: _maxPriceFilter,
+        fasilitas: _fasilitasFilter.isEmpty ? null : _fasilitasFilter,
+      );
     });
   }
 
@@ -37,6 +54,72 @@ class _KosListScreenState extends State<KosListScreen> {
     );
   }
 
+  // Fungsi untuk menampilkan dialog filter
+  Future<void> _showFilterDialog() async {
+    double tempMinPrice = _minPriceFilter ?? 0;
+    double tempMaxPrice = _maxPriceFilter ?? 5000000; // Contoh maks harga
+    String tempFasilitas = _fasilitasFilter;
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Filter Kos'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(labelText: 'Harga Min (Rp)'),
+                  controller: TextEditingController(text: tempMinPrice.toStringAsFixed(0)),
+                  onChanged: (val) {
+                    tempMinPrice = double.tryParse(val) ?? 0;
+                  },
+                ),
+                TextField(
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(labelText: 'Harga Max (Rp)'),
+                  controller: TextEditingController(text: tempMaxPrice.toStringAsFixed(0)),
+                  onChanged: (val) {
+                    tempMaxPrice = double.tryParse(val) ?? 5000000;
+                  },
+                ),
+                TextField(
+                  decoration: InputDecoration(labelText: 'Fasilitas (pisahkan koma)'),
+                  controller: TextEditingController(text: tempFasilitas),
+                  onChanged: (val) {
+                    tempFasilitas = val;
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Tutup dialog
+              },
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _minPriceFilter = tempMinPrice;
+                  _maxPriceFilter = tempMaxPrice;
+                  _fasilitasFilter = tempFasilitas;
+                });
+                _fetchKosList(); // Ambil ulang daftar dengan filter baru
+                Navigator.pop(context); // Tutup dialog
+              },
+              child: const Text('Terapkan Filter'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -44,18 +127,60 @@ class _KosListScreenState extends State<KosListScreen> {
         title: const Text('Cari Kos'),
         backgroundColor: AppConstants.primaryColor,
         foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _fetchKosList, // Tombol refresh
-            tooltip: 'Refresh Daftar Kos',
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60.0),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppConstants.defaultPadding, vertical: 8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Cari nama kos, alamat, atau deskripsi...',
+                      fillColor: Colors.white,
+                      filled: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, color: Colors.grey),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() {
+                                  _currentKeyword = '';
+                                });
+                                _fetchKosList(); // Refresh tanpa keyword
+                              },
+                            )
+                          : const Icon(Icons.search, color: Colors.grey),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _currentKeyword = value;
+                      });
+                      if (value.isEmpty) { // Langsung refresh jika search bar dikosongkan
+                         _fetchKosList();
+                      }
+                    },
+                    onSubmitted: (value) {
+                      _fetchKosList(); // Trigger pencarian saat enter
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.filter_list, color: Colors.white, size: 28),
+                  onPressed: _showFilterDialog,
+                  tooltip: 'Filter Pencarian',
+                ),
+              ],
+            ),
           ),
-          // Nanti bisa ditambahkan tombol filter/search
-          // IconButton(
-          //   icon: const Icon(Icons.filter_list),
-          //   onPressed: () { /* logika filter */ },
-          // ),
-        ],
+        ),
       ),
       body: FutureBuilder<List<Kos>>(
         future: _kosListFuture,
@@ -91,11 +216,13 @@ class _KosListScreenState extends State<KosListScreen> {
                   Icon(Icons.home_outlined, size: 80, color: Colors.grey),
                   SizedBox(height: 20),
                   Text(
-                    'Tidak ada kos ditemukan.',
+                    _currentKeyword.isNotEmpty || _minPriceFilter != null || _maxPriceFilter != null || _fasilitasFilter.isNotEmpty
+                        ? 'Tidak ada kos ditemukan dengan kriteria pencarian ini.'
+                        : 'Tidak ada kos ditemukan.',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 18, color: Colors.grey),
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   ElevatedButton.icon(
                     onPressed: _fetchKosList,
                     icon: const Icon(Icons.refresh),
@@ -105,7 +232,6 @@ class _KosListScreenState extends State<KosListScreen> {
               ),
             );
           } else {
-            // Tampilkan daftar kos
             return ListView.builder(
               padding: const EdgeInsets.all(AppConstants.defaultPadding / 2),
               itemCount: snapshot.data!.length,
@@ -113,10 +239,9 @@ class _KosListScreenState extends State<KosListScreen> {
                 final kos = snapshot.data![index];
 
                 ImageProvider? backgroundImage;
-                // Construct full image URL for NetworkImage (meskipun kita hiraukan masalah CORS gambar)
                 if (kos.fotoUtama != null && kos.fotoUtama!.isNotEmpty) {
                   final fullImageUrl = '${AppConstants.baseUrl}${kos.fotoUtama!}';
-                  // print('DEBUG_TENANT_IMAGE_URL: Mencoba memuat gambar dari: $fullImageUrl'); // Tetap aktifkan untuk debugging jika perlu
+                  // print('DEBUG_TENANT_IMAGE_URL: Mencoba memuat gambar dari: $fullImageUrl');
                   backgroundImage = NetworkImage(fullImageUrl);
                 } else {
                   backgroundImage = const AssetImage(AppConstants.imageAssetPlaceholderKos);
@@ -126,7 +251,7 @@ class _KosListScreenState extends State<KosListScreen> {
                   margin: const EdgeInsets.symmetric(vertical: AppConstants.defaultMargin / 2),
                   elevation: 4,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius)),
-                  child: InkWell( // Menggunakan InkWell agar Card bisa di-tap
+                  child: InkWell(
                     onTap: () => _navigateToKosDetail(kos),
                     borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
                     child: Padding(
@@ -134,7 +259,6 @@ class _KosListScreenState extends State<KosListScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Gambar Kos
                           Container(
                             width: 100,
                             height: 100,
@@ -157,7 +281,6 @@ class _KosListScreenState extends State<KosListScreen> {
                                 : null,
                           ),
                           const SizedBox(width: AppConstants.defaultPadding),
-                          // Detail Kos
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,

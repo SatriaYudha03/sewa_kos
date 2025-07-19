@@ -177,5 +177,51 @@ class KosService {
     }
   }
 
+// API PHP: api/kos/search.php
+  Future<List<Kos>> searchKos({
+    String? keyword,
+    double? minPrice,
+    double? maxPrice,
+    String? fasilitas, // Fasilitas kamar, dipisahkan koma (misal: "AC,KM Dalam")
+  }) async {
+    // Bangun URL dengan query parameters
+    final Map<String, String> queryParams = {};
+    if (keyword != null && keyword.isNotEmpty) {
+      queryParams['keyword'] = keyword;
+    }
+    if (minPrice != null) {
+      queryParams['min_price'] = minPrice.toString();
+    }
+    if (maxPrice != null) {
+      queryParams['max_price'] = maxPrice.toString();
+    }
+    if (fasilitas != null && fasilitas.isNotEmpty) {
+      queryParams['fasilitas'] = fasilitas;
+    }
+
+    final uri = Uri.parse("$_baseUrl/kos/search.php").replace(queryParameters: queryParams);
+    
+    try {
+      final headers = await _authService.getAuthHeaders(); // Dapatkan header otorisasi (diperlukan)
+
+      final response = await http.get(
+        uri,
+        headers: headers,
+      );
+
+      final responseBody = json.decode(response.body);
+
+      if (response.statusCode == 200 && responseBody['status'] == 'success') {
+        final List<dynamic> kosData = responseBody['data'];
+        return kosData.map((json) => Kos.fromJson(json)).toList();
+      } else {
+        print('Error searching kos: ${responseBody['message']}');
+        return [];
+      }
+    } catch (e) {
+      print('Error during searchKos: $e');
+      return [];
+    }
+  }
   // TODO: Tambahkan method untuk getKamarByKosId jika API-nya sudah ada (ini akan mengembalikan List<KamarKos>)
 }
