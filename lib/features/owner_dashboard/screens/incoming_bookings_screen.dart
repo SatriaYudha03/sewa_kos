@@ -1,10 +1,10 @@
-// lib/features/owner_dashboard/screens/incoming_bookings_screen.dart (DIUPDATE)
+// lib/features/owner_dashboard/screens/incoming_bookings_screen.dart
 import 'package:flutter/material.dart';
 import 'package:sewa_kos/core/constants/app_constants.dart';
-import 'package:sewa_kos/core/models/pemesanan_model.dart'; // Import PemesananModel
-import 'package:sewa_kos/core/models/pembayaran_model.dart'; // Import PembayaranModel
-import 'package:sewa_kos/core/services/pemesanan_service.dart'; // Import PemesananService
-import 'package:sewa_kos/core/services/pembayaran_service.dart'; // Import PembayaranService
+import 'package:sewa_kos/core/models/pemesanan_model.dart';
+import 'package:sewa_kos/core/models/pembayaran_model.dart';
+import 'package:sewa_kos/core/services/pemesanan_service.dart';
+import 'package:sewa_kos/core/services/pembayaran_service.dart';
 
 class IncomingBookingsScreen extends StatefulWidget {
   const IncomingBookingsScreen({super.key});
@@ -15,7 +15,7 @@ class IncomingBookingsScreen extends StatefulWidget {
 
 class _IncomingBookingsScreenState extends State<IncomingBookingsScreen> {
   final PemesananService _pemesananService = PemesananService();
-  final PembayaranService _pembayaranService = PembayaranService(); // Tambahkan PembayaranService
+  final PembayaranService _pembayaranService = PembayaranService();
   Future<List<Pemesanan>>? _incomingBookingsFuture;
 
   @override
@@ -24,23 +24,18 @@ class _IncomingBookingsScreenState extends State<IncomingBookingsScreen> {
     _fetchIncomingBookings();
   }
 
-  // Fungsi untuk mengambil daftar pemesanan masuk
   Future<void> _fetchIncomingBookings() async {
     setState(() {
-      // Panggil getListPemesanan, yang di sisi PHP akan memfilter untuk pemilik_kos
       _incomingBookingsFuture = _pemesananService.getListPemesanan();
     });
   }
 
-  // Fungsi untuk navigasi ke detail pemesanan (opsional, bisa dibuat nanti)
   void _navigateToBookingDetail(Pemesanan pemesanan) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Melihat detail pemesanan ${pemesanan.id} oleh ${pemesanan.tenantUsername}.')),
     );
-    // TODO: Navigasi ke BookingDetailScreen jika ada
   }
 
-  // Fungsi untuk mengubah status pemesanan (misal: konfirmasi/tolak)
   Future<void> _updateBookingStatus(int pemesananId, String currentStatus, String newStatus) async {
     if (currentStatus == newStatus) return;
 
@@ -48,7 +43,7 @@ class _IncomingBookingsScreenState extends State<IncomingBookingsScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Ubah Status Pemesanan'),
+          title: const Text('Ubah Status Pemesanan'),
           content: Text('Apakah Anda yakin ingin mengubah status pemesanan ini dari "${currentStatus.replaceAll('_', ' ')}" menjadi "${newStatus.replaceAll('_', ' ')}"?'),
           actions: <Widget>[
             TextButton(
@@ -78,7 +73,7 @@ class _IncomingBookingsScreenState extends State<IncomingBookingsScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(response['message'] ?? 'Status berhasil diubah.'), backgroundColor: AppConstants.successColor),
             );
-            _fetchIncomingBookings(); // Refresh daftar
+            _fetchIncomingBookings();
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(response['message'] ?? 'Gagal mengubah status.'), backgroundColor: AppConstants.errorColor),
@@ -95,12 +90,10 @@ class _IncomingBookingsScreenState extends State<IncomingBookingsScreen> {
     }
   }
 
-  // Fungsi untuk menampilkan detail pembayaran dan opsi verifikasi
   Future<void> _showPaymentVerificationDialog(Pemesanan pemesanan) async {
     List<Pembayaran> payments = [];
     bool isLoadingPayments = true;
 
-    // Ambil daftar pembayaran untuk pemesanan ini
     try {
       payments = await _pembayaranService.getPaymentsByPemesananId(pemesanan.id);
     } catch (e) {
@@ -137,6 +130,15 @@ class _IncomingBookingsScreenState extends State<IncomingBookingsScreen> {
                         ? const Text('Belum ada bukti pembayaran diunggah.')
                         : Column(
                             children: payments.map((payment) {
+                              ImageProvider? proofImage;
+                              if (payment.buktiTransferId != null) {
+                                final fullImageUrl = '${AppConstants.baseUrl}/images/serve.php?type=bukti_pembayaran&id=${payment.id}';
+                                print('DEBUG_PROOF_IMAGE_URL: Mencoba memuat bukti dari: $fullImageUrl');
+                                proofImage = NetworkImage(fullImageUrl);
+                              } else {
+                                proofImage = const AssetImage(AppConstants.imageAssetPlaceholderKos);
+                              }
+
                               return Card(
                                 margin: const EdgeInsets.symmetric(vertical: 4),
                                 child: Padding(
@@ -153,12 +155,12 @@ class _IncomingBookingsScreenState extends State<IncomingBookingsScreen> {
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                      if (payment.buktiTransfer != null && payment.buktiTransfer!.isNotEmpty)
+                                      if (payment.buktiTransferId != null)
                                         Column(
                                           children: [
                                             const SizedBox(height: 8),
-                                            Image.network(
-                                              '${AppConstants.baseUrl}${payment.buktiTransfer!}', // URL lengkap gambar bukti
+                                            Image(
+                                              image: proofImage!,
                                               height: 100,
                                               fit: BoxFit.cover,
                                               errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 50),
@@ -167,9 +169,6 @@ class _IncomingBookingsScreenState extends State<IncomingBookingsScreen> {
                                               icon: const Icon(Icons.open_in_new),
                                               label: const Text('Lihat Gambar Penuh'),
                                               onPressed: () {
-                                                // TODO: Buka gambar di browser atau viewer penuh
-                                                // Misalnya menggunakan url_launcher
-                                                // launchUrl(Uri.parse('${AppConstants.baseUrl}${payment.buktiTransfer!}'));
                                                 ScaffoldMessenger.of(context).showSnackBar(
                                                   const SnackBar(content: Text('Fitur lihat gambar penuh akan segera hadir!')),
                                                 );
@@ -191,15 +190,13 @@ class _IncomingBookingsScreenState extends State<IncomingBookingsScreen> {
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Tutup'),
             ),
-            // Tombol verifikasi hanya jika ada pembayaran yang menunggu verifikasi
             if (payments.any((p) => p.statusPembayaran == 'menunggu_verifikasi'))
               ElevatedButton(
                 onPressed: () async {
-                  // Temukan pembayaran yang 'menunggu_verifikasi'
                   final pendingPayment = payments.firstWhere((p) => p.statusPembayaran == 'menunggu_verifikasi');
                   await _verifyPaymentStatus(pendingPayment.id, 'terverifikasi');
-                  if (mounted) Navigator.of(context).pop(); // Tutup dialog setelah verifikasi
-                  _fetchIncomingBookings(); // Refresh daftar setelah verifikasi
+                  if (mounted) Navigator.of(context).pop();
+                  _fetchIncomingBookings();
                 },
                 child: const Text('Verifikasi Pembayaran', style: TextStyle(color: Colors.white)),
                 style: ElevatedButton.styleFrom(backgroundColor: AppConstants.successColor),
@@ -221,7 +218,6 @@ class _IncomingBookingsScreenState extends State<IncomingBookingsScreen> {
     );
   }
 
-  // Fungsi untuk memanggil PembayaranService.verifyPayment
   Future<void> _verifyPaymentStatus(int pembayaranId, String newStatus) async {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Memverifikasi pembayaran...'), duration: Duration(seconds: 1)),
@@ -269,14 +265,14 @@ class _IncomingBookingsScreenState extends State<IncomingBookingsScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error, size: 80, color: Colors.red),
-                  SizedBox(height: 20),
+                  const Icon(Icons.error, size: 80, color: Colors.red),
+                  const SizedBox(height: 20),
                   Text(
                     'Error memuat daftar pemesanan: ${snapshot.error}',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.red, fontSize: 16),
+                    style: const TextStyle(color: Colors.red, fontSize: 16),
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   ElevatedButton.icon(
                     onPressed: _fetchIncomingBookings,
                     icon: const Icon(Icons.refresh),
@@ -319,7 +315,7 @@ class _IncomingBookingsScreenState extends State<IncomingBookingsScreen> {
                   child: ListTile(
                     title: Text(
                       '${pemesanan.namaKamar ?? 'Kamar Tidak Dikenal'} di ${pemesanan.namaKos ?? 'Kos Tidak Dikenal'}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -339,14 +335,12 @@ class _IncomingBookingsScreenState extends State<IncomingBookingsScreen> {
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Tombol Verifikasi Pembayaran (jika status memungkinkan)
                         if (pemesanan.statusPemesanan == 'menunggu_pembayaran' || pemesanan.statusPemesanan == 'menunggu_verifikasi')
                           IconButton(
                             icon: const Icon(Icons.payment, color: AppConstants.primaryColor),
                             onPressed: () => _showPaymentVerificationDialog(pemesanan),
                             tooltip: 'Verifikasi Pembayaran',
                           ),
-                        // Tombol konfirmasi status pemesanan
                         if (pemesanan.statusPemesanan == 'menunggu_pembayaran')
                           IconButton(
                             icon: const Icon(Icons.check_circle, color: Colors.green),
@@ -354,7 +348,6 @@ class _IncomingBookingsScreenState extends State<IncomingBookingsScreen> {
                                 pemesanan.id, pemesanan.statusPemesanan, 'terkonfirmasi'),
                             tooltip: 'Konfirmasi Pemesanan (Tanpa Verifikasi Pembayaran)',
                           ),
-                        // Tombol batalkan jika status belum selesai/dibatalkan
                         if (pemesanan.statusPemesanan != 'dibatalkan' && pemesanan.statusPemesanan != 'selesai')
                           IconButton(
                             icon: const Icon(Icons.cancel, color: Colors.red),
@@ -362,7 +355,6 @@ class _IncomingBookingsScreenState extends State<IncomingBookingsScreen> {
                                 pemesanan.id, pemesanan.statusPemesanan, 'dibatalkan'),
                             tooltip: 'Batalkan Pemesanan',
                           ),
-                        // Tombol Selesai jika status terkonfirmasi
                         if (pemesanan.statusPemesanan == 'terkonfirmasi')
                           IconButton(
                             icon: const Icon(Icons.done_all, color: Colors.blueGrey),
@@ -383,7 +375,6 @@ class _IncomingBookingsScreenState extends State<IncomingBookingsScreen> {
     );
   }
 
-  // Helper untuk mendapatkan warna status
   Color _getStatusColor(String status) {
     switch (status) {
       case 'menunggu_pembayaran':

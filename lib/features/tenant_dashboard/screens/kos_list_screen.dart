@@ -1,4 +1,4 @@
-// lib/features/tenant_dashboard/screens/kos_list_screen.dart (DIUPDATE)
+// lib/features/tenant_dashboard/screens/kos_list_screen.dart
 import 'package:flutter/material.dart';
 import 'package:sewa_kos/core/constants/app_constants.dart';
 import 'package:sewa_kos/core/models/kos_model.dart';
@@ -20,12 +20,12 @@ class _KosListScreenState extends State<KosListScreen> {
   String _currentKeyword = '';
   double? _minPriceFilter;
   double? _maxPriceFilter;
-  String _fasilitasFilter = ''; // Contoh: "AC,KM Dalam"
+  String _fasilitasFilter = '';
 
   @override
   void initState() {
     super.initState();
-    _fetchKosList(); // Ambil semua kos awalnya
+    _fetchKosList();
   }
 
   @override
@@ -34,7 +34,6 @@ class _KosListScreenState extends State<KosListScreen> {
     super.dispose();
   }
 
-  // Fungsi untuk mengambil daftar kos dengan filter
   Future<void> _fetchKosList() async {
     setState(() {
       _kosListFuture = _kosService.searchKos(
@@ -46,7 +45,6 @@ class _KosListScreenState extends State<KosListScreen> {
     });
   }
 
-  // Fungsi untuk navigasi ke detail kos
   void _navigateToKosDetail(Kos kos) {
     Navigator.push(
       context,
@@ -54,10 +52,9 @@ class _KosListScreenState extends State<KosListScreen> {
     );
   }
 
-  // Fungsi untuk menampilkan dialog filter
   Future<void> _showFilterDialog() async {
     double tempMinPrice = _minPriceFilter ?? 0;
-    double tempMaxPrice = _maxPriceFilter ?? 5000000; // Contoh maks harga
+    double tempMaxPrice = _maxPriceFilter ?? 5000000;
     String tempFasilitas = _fasilitasFilter;
 
     await showDialog(
@@ -71,7 +68,7 @@ class _KosListScreenState extends State<KosListScreen> {
               children: [
                 TextField(
                   keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: 'Harga Min (Rp)'),
+                  decoration: const InputDecoration(labelText: 'Harga Min (Rp)'),
                   controller: TextEditingController(text: tempMinPrice.toStringAsFixed(0)),
                   onChanged: (val) {
                     tempMinPrice = double.tryParse(val) ?? 0;
@@ -79,14 +76,14 @@ class _KosListScreenState extends State<KosListScreen> {
                 ),
                 TextField(
                   keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: 'Harga Max (Rp)'),
+                  decoration: const InputDecoration(labelText: 'Harga Max (Rp)'),
                   controller: TextEditingController(text: tempMaxPrice.toStringAsFixed(0)),
                   onChanged: (val) {
                     tempMaxPrice = double.tryParse(val) ?? 5000000;
                   },
                 ),
                 TextField(
-                  decoration: InputDecoration(labelText: 'Fasilitas (pisahkan koma)'),
+                  decoration: const InputDecoration(labelText: 'Fasilitas (pisahkan koma)'),
                   controller: TextEditingController(text: tempFasilitas),
                   onChanged: (val) {
                     tempFasilitas = val;
@@ -98,7 +95,7 @@ class _KosListScreenState extends State<KosListScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Tutup dialog
+                Navigator.pop(context);
               },
               child: const Text('Batal'),
             ),
@@ -109,8 +106,8 @@ class _KosListScreenState extends State<KosListScreen> {
                   _maxPriceFilter = tempMaxPrice;
                   _fasilitasFilter = tempFasilitas;
                 });
-                _fetchKosList(); // Ambil ulang daftar dengan filter baru
-                Navigator.pop(context); // Tutup dialog
+                _fetchKosList();
+                Navigator.pop(context);
               },
               child: const Text('Terapkan Filter'),
             ),
@@ -153,7 +150,7 @@ class _KosListScreenState extends State<KosListScreen> {
                                 setState(() {
                                   _currentKeyword = '';
                                 });
-                                _fetchKosList(); // Refresh tanpa keyword
+                                _fetchKosList();
                               },
                             )
                           : const Icon(Icons.search, color: Colors.grey),
@@ -162,12 +159,12 @@ class _KosListScreenState extends State<KosListScreen> {
                       setState(() {
                         _currentKeyword = value;
                       });
-                      if (value.isEmpty) { // Langsung refresh jika search bar dikosongkan
+                      if (value.isEmpty) {
                          _fetchKosList();
                       }
                     },
                     onSubmitted: (value) {
-                      _fetchKosList(); // Trigger pencarian saat enter
+                      _fetchKosList();
                     },
                   ),
                 ),
@@ -192,14 +189,14 @@ class _KosListScreenState extends State<KosListScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error, size: 80, color: Colors.red),
-                  SizedBox(height: 20),
+                  const Icon(Icons.error, size: 80, color: Colors.red),
+                  const SizedBox(height: 20),
                   Text(
                     'Error memuat daftar kos: ${snapshot.error}',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.red, fontSize: 16),
+                    style: const TextStyle(color: Colors.red, fontSize: 16),
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   ElevatedButton.icon(
                     onPressed: _fetchKosList,
                     icon: const Icon(Icons.refresh),
@@ -213,14 +210,14 @@ class _KosListScreenState extends State<KosListScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.home_outlined, size: 80, color: Colors.grey),
-                  SizedBox(height: 20),
+                  const Icon(Icons.home_outlined, size: 80, color: Colors.grey),
+                  const SizedBox(height: 20),
                   Text(
                     _currentKeyword.isNotEmpty || _minPriceFilter != null || _maxPriceFilter != null || _fasilitasFilter.isNotEmpty
                         ? 'Tidak ada kos ditemukan dengan kriteria pencarian ini.'
                         : 'Tidak ada kos ditemukan.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                    style: const TextStyle(fontSize: 18, color: Colors.grey),
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton.icon(
@@ -239,9 +236,9 @@ class _KosListScreenState extends State<KosListScreen> {
                 final kos = snapshot.data![index];
 
                 ImageProvider? backgroundImage;
-                if (kos.fotoUtama != null && kos.fotoUtama!.isNotEmpty) {
-                  final fullImageUrl = '${AppConstants.baseUrl}${kos.fotoUtama!}';
-                  // print('DEBUG_TENANT_IMAGE_URL: Mencoba memuat gambar dari: $fullImageUrl');
+                if (kos.hasImage) {
+                  final fullImageUrl = '${AppConstants.baseUrl}/images/serve.php?type=kos&id=${kos.id}';
+                  print('DEBUG_TENANT_IMAGE_URL: Mencoba memuat gambar dari: $fullImageUrl');
                   backgroundImage = NetworkImage(fullImageUrl);
                 } else {
                   backgroundImage = const AssetImage(AppConstants.imageAssetPlaceholderKos);
@@ -269,15 +266,14 @@ class _KosListScreenState extends State<KosListScreen> {
                                 fit: BoxFit.cover,
                                 onError: (exception, stackTrace) {
                                   print('ERROR_TENANT_IMAGE_LOAD: Gagal memuat gambar ${kos.namaKos}: $exception');
-                                  // Fallback ke placeholder jika error
                                   setState(() {
                                     backgroundImage = const AssetImage(AppConstants.imageAssetPlaceholderKos);
                                   });
                                 },
                               ),
                             ),
-                            child: (kos.fotoUtama == null || kos.fotoUtama!.isEmpty) && backgroundImage is AssetImage
-                                ? Icon(Icons.apartment, size: 50, color: AppConstants.primaryColor.withOpacity(0.7))
+                            child: (!kos.hasImage) && backgroundImage is AssetImage
+                                ? const Icon(Icons.apartment, size: 50, color: AppConstants.primaryColor)
                                 : null,
                           ),
                           const SizedBox(width: AppConstants.defaultPadding),

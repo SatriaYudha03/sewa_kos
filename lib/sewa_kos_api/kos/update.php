@@ -1,38 +1,48 @@
 <?php
-// api/kos/update.php (Kode Lengkap - Path Dikonfirmasi Benar untuk Struktur Anda)
+// api/kos/update.php (DIUPDATE: Menyimpan gambar Base64 ke DB sebagai BLOB)
 
-// Aktifkan semua pelaporan error untuk debugging (HAPUS ini di produksi!)
+// --- DEBUGGING SANGAT AGRESIF (HAPUS ini di produksi!) ---
 error_reporting(E_ALL); 
 ini_set('display_errors', 1);
 ini_set('log_errors', 1);
-ini_set('error_log', '../../php_error.log'); // <-- Path ini relatif dari 'kos/', jadi log akan di sewa_kos_api/php_error.log
+ini_set('error_log', '../../php_error.log'); 
 
-// Path untuk require_once relatif dari folder 'kos/'
-require_once '../config/database.php'; // <-- PATH INI BENAR
-require_once '../utils/auth_check.php'; // <-- PATH INI BENAR
+error_log("UPDATE KOS DEBUG: Script execution started. Request Method: " . $_SERVER['REQUEST_METHOD']);
 
-header('Content-Type: application/json');
+// --- HEADER CORS UNIVERSAL ---
 header('Access-Control-Allow-Origin: *'); 
-header('Access-Control-Allow-Methods: PUT, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-User-ID, X-User-Role');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS'); 
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-User-ID, X-User-Role'); 
 
-// Handle OPTIONS request for CORS preflight
+// --- IMPORTS ---
+require_once '../config/database.php';
+require_once '../utils/auth_check.php';
+
+// --- HANDLE PREFLIGHT OPTIONS REQUEST ---
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
+    error_log("UPDATE KOS DEBUG: Handling OPTIONS request.");
+    header('Access-Control-Allow-Origin: *'); 
+    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS'); 
+    header('Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization, X-User-ID, X-User-Role'); 
+    header('Access-Control-Max-Age: 3600'); 
+    http_response_code(200); 
+    exit(); 
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
-    $data = json_decode(file_get_contents('php://input'), true);
+    $raw_input = file_get_contents('php://input');
+    $data = json_decode($raw_input, true);
+
+    error_log("UPDATE KOS DEBUG: Raw input: " . $raw_input);
+    error_log("UPDATE KOS DEBUG: Decoded data: " . print_r($data, true));
 
     $kos_id = $data['id'] ?? '';
 
-    $user_id_from_header = $data['user_id_from_header'] ?? ($_SERVER['HTTP_X_USER_ID'] ?? '');
-    $user_role_from_header = $data['user_role_from_header'] ?? ($_SERVER['HTTP_X_USER_ROLE'] ?? '');
+    $user_id_from_header = $_SERVER['HTTP_X_USER_ID'] ?? '';
+    $user_role_from_header = $_SERVER['HTTP_X_USER_ROLE'] ?? '';
 
     error_log("UPDATE KOS DEBUG: Request received. Kos ID: $kos_id, User ID: $user_id_from_header, Role: $user_role_from_header");
 
-    // Otorisasi: hanya pemilik_kos yang bisa update
     $authorized_user_id = checkAuthorization(['pemilik_kos'], [
         'user_id' => $user_id_from_header,
         'role_name' => $user_role_from_header
@@ -48,17 +58,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
     $nama_kos = $data['nama_kos'] ?? null;
     $alamat = $data['alamat'] ?? null;
     $deskripsi = $data['deskripsi'] ?? null;
-    $foto_utama_input = $data['foto_utama'] ?? null; 
+    $foto_utama_base64 = $data['foto_utama'] ?? null; // Menerima Base64 string atau null (jika dihapus)
     $fasilitas_umum = $data['fasilitas_umum'] ?? null;
 
-    $image_db_path = null; 
+    $image_binary_data = null; // Ini akan menyimpan data BLOB untuk database
+    $image_mime_type = null;   // Menyimpan tipe MIME (misal: image/jpeg)
 
     try {
         $pdo = getDBConnection();
-        $pdo->beginTransaction(); 
+        $pdo->beginTransaction();
 
         // 1. Ambil data kos yang sudah ada untuk verifikasi kepemilikan dan current foto_utama
-        $stmt_kos = $pdo->prepare("SELECT user_id, foto_utama FROM kos WHERE id = ?");
+        $stmt_kos = $pdo->prepare("SELECT user_id, foto_utama FROM kos WHERE id = ?"); // Ambil BLOB juga jika perlu
         $stmt_kos->execute([$kos_id]);
         $kos_info = $stmt_kos->fetch();
 
@@ -79,26 +90,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
             exit();
         }
 
-        // Logika untuk menangani upload gambar Base64 atau mempertahankan yang lama
-        if ($foto_utama_input) {
-            error_log("UPDATE KOS DEBUG: foto_utama_input received. Length: " . strlen($foto_utama_input));
+        // Logika untuk menangani upload gambar Base64 atau menghapus/mempertahankan
+        if ($foto_utama_base64) { // Jika ada data gambar yang dikirim (bisa base64 baru atau string path lama - yang sekarang tidak relevan)
+            error_log("UPDATE KOS DEBUG: foto_utama_base64 received. Length: " . strlen($foto_utama_base64));
 
-            if (strpos($foto_utama_input, 'data:image/') === 0 || base64_encode(base64_decode($foto_utama_input, true)) === $foto_utama_input) {
+            // Periksa apakah ini string base64 baru (dimulai dengan 'data:image/' atau valid base64)
+            if (strpos($foto_utama_base64, 'data:image/') === 0 || base64_encode(base64_decode($foto_utama_base64, true)) === $foto_utama_base64) {
                 error_log("UPDATE KOS DEBUG: foto_utama_input detected as Base64. Processing new image.");
-
-                // Hapus gambar lama jika ada dan merupakan file yang kita kelola
-                if ($kos_info['foto_utama'] && strpos($kos_info['foto_utama'], '/uploads/') === 0) {
-                    $old_file_path = '../..' . $kos_info['foto_utama']; 
-                    if (file_exists($old_file_path)) {
-                        unlink($old_file_path); 
-                        error_log("UPDATE KOS DEBUG: Old image '$old_file_path' deleted.");
-                    } else {
-                        error_log("UPDATE KOS DEBUG: Old image '$old_file_path' not found for deletion.");
-                    }
-                }
-
-                $base64_parts = explode(',', $foto_utama_input);
-                $base64_string = end($base64_parts);
+                
+                $base64_parts = explode(',', $foto_utama_base64);
+                $base64_string = end($base64_parts); 
 
                 $decoded_image = base64_decode($base64_string);
                 if ($decoded_image === false) {
@@ -111,84 +112,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
 
                 $finfo = new finfo(FILEINFO_MIME_TYPE);
                 $mime_type = $finfo->buffer($decoded_image);
-                $extension = '';
-                switch ($mime_type) {
-                    case 'image/jpeg': $extension = '.jpg'; break;
-                    case 'image/png': $extension = '.png'; break;
-                    case 'image/gif': $extension = '.gif'; break;
-                    case 'image/webp': $extension = '.webp'; break;
-                    default:
-                        http_response_code(400);
-                        echo json_encode(['status' => 'error', 'message' => 'Tipe gambar tidak didukung: ' . $mime_type]);
-                        $pdo->rollBack();
-                        error_log("UPDATE KOS DEBUG: Unsupported new image type: " . $mime_type);
-                        exit();
-                }
-                error_log("UPDATE KOS DEBUG: Detected new image MIME type: $mime_type, Extension: $extension");
-
-                $upload_dir = '../uploads/kos_images/'; // <-- PATH INI BENAR untuk struktur Anda!
-                $file_name = uniqid() . $extension;
-                $file_path = $upload_dir . $file_name;
-
-                if (!is_dir($upload_dir)) {
-                    error_log("UPDATE KOS DEBUG: Upload directory '$upload_dir' does not exist. Trying to create.");
-                    if (!mkdir($upload_dir, 0777, true)) {
-                        http_response_code(500);
-                        echo json_encode(['status' => 'error', 'message' => 'Gagal membuat folder upload. Pastikan izin folder benar.']);
-                        $pdo->rollBack();
-                        error_log("UPDATE KOS DEBUG: Failed to create upload directory: '$upload_dir'");
-                        exit();
-                    }
-                }
-                if (!is_writable($upload_dir)) {
-                    http_response_code(500);
-                    echo json_encode(['status' => 'error', 'message' => 'Folder upload tidak memiliki izin tulis.']);
-                    $pdo->rollBack();
-                    error_log("UPDATE KOS DEBUG: Upload directory '$upload_dir' is not writable.");
-                    exit();
-                }
                 
-                if (file_put_contents($file_path, $decoded_image)) {
-                    $image_db_path = '/uploads/kos_images/' . $file_name; 
-                    error_log("UPDATE KOS DEBUG: New image successfully saved to: " . $file_path . ". DB path: " . $image_db_path);
-                } else {
-                    $last_php_error = error_get_last();
-                    $error_message = $last_php_error ? $last_php_error['message'] : 'Unknown error';
-                    http_response_code(500);
-                    echo json_encode(['status' => 'error', 'message' => 'Gagal menyimpan file gambar baru di server.']);
+                // Cek tipe MIME yang diizinkan
+                if (!in_array($mime_type, ['image/jpeg', 'image/png', 'image/gif', 'image/webp'])) {
+                    http_response_code(400);
+                    echo json_encode(['status' => 'error', 'message' => 'Tipe gambar tidak didukung: ' . $mime_type]);
                     $pdo->rollBack();
-                    error_log("UPDATE KOS DEBUG: Failed to save new image. Path: " . $file_path . ". PHP Error: " . $error_message);
+                    error_log("UPDATE KOS DEBUG: Unsupported new image type: " . $mime_type);
                     exit();
                 }
+
+                $image_binary_data = $decoded_image; // Simpan data binary untuk DB
+                $image_mime_type = $mime_type; // Simpan MIME type (jika ingin disimpan)
+                error_log("UPDATE KOS DEBUG: New image data ready for DB (MIME: $image_mime_type).");
+
             } else {
-                $image_db_path = $foto_utama_input; 
-                error_log("UPDATE KOS DEBUG: foto_utama_input is not Base64. Retaining current path: " . $image_db_path);
+                // Ini kasus di mana Flutter mengirim URL lama (yang sekarang tidak relevan untuk BLOB)
+                // Jadi, jika bukan base64 baru, asumsikan user tidak mengubah gambar.
+                // Binary data akan tetap seperti yang sudah ada di DB.
+                $image_binary_data = $kos_info['foto_utama']; // Pertahankan BLOB yang sudah ada
+                error_log("UPDATE KOS DEBUG: foto_utama_input is not Base64. Assuming no image change. Retaining existing BLOB.");
             }
-        } else {
-            error_log("UPDATE KOS DEBUG: foto_utama_input is null/empty. Attempting to delete old image.");
-            if ($kos_info['foto_utama'] && strpos($kos_info['foto_utama'], '/uploads/') === 0) {
-                $old_file_path = '../..' . $kos_info['foto_utama'];
-                if (file_exists($old_file_path)) {
-                    unlink($old_file_path);
-                    error_log("UPDATE KOS DEBUG: Old image '$old_file_path' deleted.");
-                } else {
-                    error_log("UPDATE KOS DEBUG: Old image '$old_file_path' not found for deletion.");
-                }
-            }
-            $image_db_path = null; 
+        } else { // foto_utama_base64 adalah null atau kosong
+            // Ini berarti user ingin menghapus gambar
+            $image_binary_data = null; // Set ke null di DB
+            error_log("UPDATE KOS DEBUG: foto_utama_input is null/empty. Setting image to null in DB.");
         }
 
+
+        // Siapkan query UPDATE secara dinamis
         $set_parts = [];
         $params = [];
 
         if ($nama_kos !== null) { $set_parts[] = 'nama_kos = ?'; $params[] = $nama_kos; }
         if ($alamat !== null) { $set_parts[] = 'alamat = ?'; $params[] = $alamat; }
         if ($deskripsi !== null) { $set_parts[] = 'deskripsi = ?'; $params[] = $deskripsi; }
-        $set_parts[] = 'foto_utama = ?'; $params[] = $image_db_path; 
+        
+        // Foto utama selalu diupdate karena bisa null, atau binary baru
+        $set_parts[] = 'foto_utama = ?'; 
+        // Binding untuk BLOB menggunakan PDO::PARAM_LOB
+        $params_types = []; // Array untuk menyimpan tipe binding jika perlu
+        $params_types[] = PDO::PARAM_LOB; 
+        
         if ($fasilitas_umum !== null) { $set_parts[] = 'fasilitas_umum = ?'; $params[] = $fasilitas_umum; }
         
         if (empty($set_parts)) {
-            http_response_code(400);
+            http_response_code(200);
             echo json_encode(['status' => 'info', 'message' => 'Tidak ada data untuk diperbarui.']);
             $pdo->rollBack();
             error_log("UPDATE KOS DEBUG: No data to update.");
@@ -196,31 +165,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
         }
 
         $sql = "UPDATE kos SET " . implode(', ', $set_parts) . " WHERE id = ?";
-        $params[] = $kos_id;
-
+        
         $stmt = $pdo->prepare($sql);
-        $stmt->execute($params);
+        
+        // Binding parameter secara manual untuk BLOB
+        $param_index = 1;
+        foreach ($params as $key => $value) {
+            if ($param_index == array_search('foto_utama = ?', $set_parts) + 1) { // Jika ini parameter foto_utama
+                $stmt->bindParam($param_index, $image_binary_data, PDO::PARAM_LOB);
+            } else {
+                $stmt->bindParam($param_index, $params[$key]);
+            }
+            $param_index++;
+        }
+        $stmt->bindParam($param_index, $kos_id); // Binding ID kos terakhir
+
+        $stmt->execute();
 
         if ($stmt->rowCount() > 0) {
             $pdo->commit();
-            echo json_encode(['status' => 'success', 'message' => 'Data kos berhasil diperbarui.', 'foto_utama_path' => $image_db_path]);
             http_response_code(200);
+            echo json_encode(['status' => 'success', 'message' => 'Data kos berhasil diperbarui.']);
             error_log("UPDATE KOS DEBUG: Kos updated successfully. ID: $kos_id.");
         } else {
             $pdo->rollBack();
-            echo json_encode(['status' => 'info', 'message' => 'Tidak ada perubahan pada data kos atau kos tidak ditemukan.']);
             http_response_code(200);
+            echo json_encode(['status' => 'info', 'message' => 'Tidak ada perubahan pada data kos atau kos tidak ditemukan.']);
             error_log("UPDATE KOS DEBUG: No rows affected during update for ID: $kos_id.");
         }
 
     } catch (PDOException $e) {
         $pdo->rollBack();
-        error_log("UPDATE KOS DEBUG: PDOException during update: " . $e->getMessage());
+        error_log("UPDATE KOS DEBUG: PDOException: " . $e->getMessage());
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Gagal memperbarui kos (Database Error).']);
     } catch (Exception $e) { 
         $pdo->rollBack();
-        error_log("UPDATE KOS DEBUG: General Exception during update: " . $e->getMessage());
+        error_log("UPDATE KOS DEBUG: General Exception: " . $e->getMessage());
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Terjadi kesalahan internal.']);
     }

@@ -1,4 +1,4 @@
-// lib/features/tenant_dashboard/screens/booking_history_screen.dart (DIUPDATE)
+// lib/features/tenant_dashboard/screens/booking_history_screen.dart
 import 'package:flutter/material.dart';
 import 'package:sewa_kos/core/constants/app_constants.dart';
 import 'package:sewa_kos/core/models/pemesanan_model.dart';
@@ -35,7 +35,6 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     // TODO: Navigasi ke BookingDetailScreen jika ada, atau PaymentDetailScreen
   }
 
-  // Fungsi baru untuk navigasi ke layar upload bukti pembayaran
   void _navigateToUploadProofScreen(Pemesanan pemesanan) {
     Navigator.push(
       context,
@@ -43,7 +42,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
         builder: (context) => UploadPaymentProofScreen(
           pemesanan: pemesanan,
           onProofUploaded: () {
-            _fetchBookingHistory(); // Refresh daftar setelah upload berhasil
+            _fetchBookingHistory();
           },
         ),
       ),
@@ -75,14 +74,14 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error, size: 80, color: Colors.red),
-                  SizedBox(height: 20),
+                  const Icon(Icons.error, size: 80, color: Colors.red),
+                  const SizedBox(height: 20),
                   Text(
                     'Error memuat riwayat pemesanan: ${snapshot.error}',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.red, fontSize: 16),
+                    style: const TextStyle(color: Colors.red, fontSize: 16),
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   ElevatedButton.icon(
                     onPressed: _fetchBookingHistory,
                     icon: const Icon(Icons.refresh),
@@ -96,14 +95,14 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.bookmark_border, size: 80, color: Colors.grey),
-                  SizedBox(height: 20),
-                  Text(
+                  const Icon(Icons.bookmark_border, size: 80, color: Colors.grey),
+                  const SizedBox(height: 20),
+                  const Text(
                     'Anda belum memiliki riwayat pemesanan.',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 18, color: Colors.grey),
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   ElevatedButton.icon(
                     onPressed: _fetchBookingHistory,
                     icon: const Icon(Icons.refresh),
@@ -149,7 +148,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                         ? IconButton(
                             icon: const Icon(Icons.payment, color: AppConstants.accentColor),
                             onPressed: () {
-                              _navigateToUploadProofScreen(pemesanan); // Panggil fungsi navigasi baru
+                              _navigateToUploadProofScreen(pemesanan);
                             },
                             tooltip: 'Upload Bukti Pembayaran',
                           )
@@ -175,8 +174,8 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
         return Colors.red;
       case 'selesai':
         return Colors.grey;
-      case 'menunggu_verifikasi': // Tambahkan status ini
-        return Colors.blue; // Warna untuk status menunggu verifikasi
+      case 'menunggu_verifikasi':
+        return Colors.blue;
       default:
         return Colors.black;
     }

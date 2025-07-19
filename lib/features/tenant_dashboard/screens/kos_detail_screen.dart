@@ -1,13 +1,13 @@
 // lib/features/tenant_dashboard/screens/kos_detail_screen.dart
 import 'package:flutter/material.dart';
 import 'package:sewa_kos/core/constants/app_constants.dart';
-import 'package:sewa_kos/core/models/kos_model.dart'; // Import KosModel
-import 'package:sewa_kos/core/models/kamar_kos_model.dart'; // Import KamarKosModel
-import 'package:sewa_kos/core/services/kamar_service.dart'; // Import KamarService
-import 'package:sewa_kos/core/services/pemesanan_service.dart'; // Import PemesananService
+import 'package:sewa_kos/core/models/kos_model.dart';
+import 'package:sewa_kos/core/models/kamar_kos_model.dart';
+import 'package:sewa_kos/core/services/kamar_service.dart';
+import 'package:sewa_kos/core/services/pemesanan_service.dart';
 
 class KosDetailScreen extends StatefulWidget {
-  final Kos kos; // Kos yang akan ditampilkan detailnya
+  final Kos kos;
 
   const KosDetailScreen({super.key, required this.kos});
 
@@ -20,9 +20,9 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
   final PemesananService _pemesananService = PemesananService();
   Future<List<KamarKos>>? _availableRoomsFuture;
 
-  KamarKos? _selectedKamar; // Kamar yang dipilih untuk pemesanan
+  KamarKos? _selectedKamar;
   DateTime? _selectedTanggalMulai;
-  int _durasiSewa = 1; // Default 1 bulan
+  int _durasiSewa = 1;
 
   @override
   void initState() {
@@ -32,12 +32,10 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
 
   Future<void> _fetchAvailableRooms() async {
     setState(() {
-      // Ambil hanya kamar yang berstatus 'tersedia' untuk penyewa
       _availableRoomsFuture = _kamarService.getKamarByKosId(widget.kos.id);
     });
   }
 
-  // Fungsi untuk menampilkan date picker
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -52,7 +50,6 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
     }
   }
 
-  // Fungsi untuk membuat pemesanan
   Future<void> _createBooking() async {
     if (_selectedKamar == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -83,8 +80,7 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(response['message'] ?? 'Pemesanan berhasil dibuat!'), backgroundColor: AppConstants.successColor),
           );
-          // Mungkin refresh daftar kamar atau kembali ke daftar kos
-          Navigator.pop(context); 
+          Navigator.pop(context);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(response['message'] ?? 'Gagal membuat pemesanan.'), backgroundColor: AppConstants.errorColor),
@@ -124,8 +120,8 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
                 image: DecorationImage(
-                  image: (widget.kos.fotoUtama != null && widget.kos.fotoUtama!.isNotEmpty)
-                      ? NetworkImage('${AppConstants.baseUrl}${widget.kos.fotoUtama!}')
+                  image: (widget.kos.hasImage)
+                      ? NetworkImage('${AppConstants.baseUrl}/images/serve.php?type=kos&id=${widget.kos.id}')
                       : const AssetImage(AppConstants.imageAssetPlaceholderKos) as ImageProvider,
                   fit: BoxFit.cover,
                   onError: (exception, stackTrace) {
@@ -133,7 +129,7 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                   },
                 ),
               ),
-              child: (widget.kos.fotoUtama == null || widget.kos.fotoUtama!.isEmpty)
+              child: (!widget.kos.hasImage)
                   ? Icon(Icons.apartment, size: 80, color: AppConstants.primaryColor.withOpacity(0.7))
                   : null,
             ),
@@ -147,7 +143,7 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
             const SizedBox(height: 8),
             Row(
               children: [
-                Icon(Icons.location_on, size: 18, color: AppConstants.textColorSecondary),
+                const Icon(Icons.location_on, size: 18, color: AppConstants.textColorSecondary),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
@@ -241,10 +237,9 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                                 onPressed: () {
                                   setState(() {
                                     _selectedKamar = kamar;
-                                    _selectedTanggalMulai = null; // Reset tanggal
-                                    _durasiSewa = 1; // Reset durasi
+                                    _selectedTanggalMulai = null;
+                                    _durasiSewa = 1;
                                   });
-                                  // Tampilkan dialog pemesanan
                                   _showBookingDialog(context);
                                 },
                                 icon: const Icon(Icons.book_online),
@@ -269,12 +264,11 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
     );
   }
 
-  // Dialog untuk konfirmasi pemesanan
   void _showBookingDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return StatefulBuilder( // Gunakan StatefulBuilder untuk mengupdate dialog
+        return StatefulBuilder(
           builder: (context, setStateInDialog) {
             return AlertDialog(
               title: Text('Pesan Kamar "${_selectedKamar!.namaKamar}"'),
@@ -290,8 +284,8 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                           : 'Mulai: ${_selectedTanggalMulai!.toLocal().toString().split(' ')[0]}'),
                       trailing: const Icon(Icons.calendar_today),
                       onTap: () async {
-                        await _selectDate(context); // Panggil selectDate dari State utama
-                        setStateInDialog(() {}); // Update dialog setelah tanggal dipilih
+                        await _selectDate(context);
+                        setStateInDialog(() {});
                       },
                     ),
                     const SizedBox(height: 16),
@@ -305,7 +299,7 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                               .map((e) => DropdownMenuItem(value: e, child: Text('$e bulan')))
                               .toList(),
                           onChanged: (value) {
-                            setStateInDialog(() { // Update state di dialog
+                            setStateInDialog(() {
                               _durasiSewa = value!;
                             });
                           },

@@ -1,14 +1,13 @@
 // lib/features/owner_dashboard/screens/add_edit_kos_screen.dart
 import 'dart:convert'; // Untuk base64Encode
-import 'dart:io'; // Untuk PlatformFile, File
+import 'dart:io'; // Untuk File
 import 'dart:typed_data'; // Untuk Uint8List
 import 'package:flutter/foundation.dart' show kIsWeb; // Untuk cek platform web
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http; // Tetap perlu untuk http request jika tanpa service
-import 'package:file_picker/file_picker.dart'; // Untuk memilih file gambar
 import 'package:sewa_kos/core/services/kos_service.dart'; // Import KosService
 import 'package:sewa_kos/core/models/kos_model.dart'; // Import KosModel
 import 'package:sewa_kos/core/constants/app_constants.dart'; // Import AppConstants
+import 'package:file_picker/file_picker.dart'; // Untuk memilih file gambar
 
 class AddEditKosScreen extends StatefulWidget {
   final Kos? kos; // Jika ada kos, berarti mode edit
@@ -24,12 +23,11 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
   final TextEditingController _namaKosController = TextEditingController();
   final TextEditingController _alamatController = TextEditingController();
   final TextEditingController _deskripsiController = TextEditingController();
-  final TextEditingController _fotoUtamaController = TextEditingController(); // Untuk URL/Base64 gambar
   final TextEditingController _fasilitasUmumController = TextEditingController();
 
   PlatformFile? _imageFile;
   Uint8List? _webImage; // Untuk pratinjau gambar di web
-  String? _currentImageUrl; // Untuk menyimpan URL gambar yang sudah ada saat mode edit
+  // Hapus int? _currentFotoUtamaId; karena tidak diperlukan lagi
 
   bool _isLoading = false;
 
@@ -37,13 +35,11 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
   void initState() {
     super.initState();
     if (widget.kos != null) {
-      // Jika mode edit, isi controller dengan data kos yang ada
       _namaKosController.text = widget.kos!.namaKos;
       _alamatController.text = widget.kos!.alamat;
       _deskripsiController.text = widget.kos!.deskripsi ?? '';
-      _fotoUtamaController.text = widget.kos!.fotoUtama ?? ''; // Ini mungkin URL, bukan Base64
       _fasilitasUmumController.text = widget.kos!.fasilitasUmum ?? '';
-      _currentImageUrl = widget.kos!.fotoUtama; // Simpan URL gambar yang ada
+      // Hapus baris _currentFotoUtamaId = widget.kos!.fotoUtamaId;
     }
   }
 
@@ -73,7 +69,7 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
         setState(() {
           _imageFile = file;
           _webImage = file.bytes;
-          _currentImageUrl = null; // Hapus URL lama jika memilih gambar baru
+          // Tidak perlu set _currentFotoUtamaId = null; karena tidak ada variabel itu lagi
         });
       }
     } catch (e) {
@@ -92,12 +88,16 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
       _isLoading = true;
     });
 
-    String? fotoUtamaData; // Akan berisi base64 atau URL lama
+    String? fotoUtamaBase64;
     if (_imageFile != null && _imageFile!.bytes != null) {
-      fotoUtamaData = base64Encode(_imageFile!.bytes!); // Encode gambar baru ke Base64
-    } else if (_currentImageUrl != null) {
-      fotoUtamaData = _currentImageUrl; // Gunakan URL gambar lama jika tidak ada gambar baru
-    }
+      fotoUtamaBase64 = base64Encode(_imageFile!.bytes!);
+    } 
+    // Jika _imageFile null, artinya user tidak memilih gambar baru.
+    // Jika ini mode edit dan _imageFile null, kita tidak akan mengubah gambar.
+    // PHP API kita (update.php) sudah dirancang untuk mempertahankan BLOB yang ada
+    // jika field foto_utama tidak dikirim, atau menghapus jika dikirim null secara eksplisit.
+    // Jadi, kita hanya akan mengirim fotoUtamaBase64 jika ada gambar baru.
+    // Jika ingin menghapus gambar lama secara eksplisit, Anda bisa menambah tombol 'Hapus Gambar'.
 
     final kosService = KosService();
     dynamic response;
@@ -109,7 +109,7 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
           namaKos: _namaKosController.text,
           alamat: _alamatController.text,
           deskripsi: _deskripsiController.text.isNotEmpty ? _deskripsiController.text : null,
-          fotoUtama: fotoUtamaData, // Kirim Base64 atau URL
+          fotoUtama: fotoUtamaBase64,
           fasilitasUmum: _fasilitasUmumController.text.isNotEmpty ? _fasilitasUmumController.text : null,
         );
       } else {
@@ -119,7 +119,7 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
           namaKos: _namaKosController.text,
           alamat: _alamatController.text,
           deskripsi: _deskripsiController.text.isNotEmpty ? _deskripsiController.text : null,
-          fotoUtama: fotoUtamaData, // Kirim Base64 atau URL
+          fotoUtama: fotoUtamaBase64, // Hanya kirim jika ada gambar baru
           fasilitasUmum: _fasilitasUmumController.text.isNotEmpty ? _fasilitasUmumController.text : null,
         );
       }
@@ -132,7 +132,7 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
               backgroundColor: AppConstants.successColor,
             ),
           );
-          Navigator.pop(context, true); // Beri tahu MyKosScreen untuk refresh
+          Navigator.pop(context, true);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -168,7 +168,7 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(AppConstants.defaultPadding),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -223,22 +223,28 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    _imageFile != null
-                        ? kIsWeb // Cek apakah di web
-                            ? Image.memory(_webImage!, height: 150, fit: BoxFit.cover)
-                            : Image.file(File(_imageFile!.path!), height: 150, fit: BoxFit.cover)
-                        : _currentImageUrl != null && _currentImageUrl!.isNotEmpty
-                            ? Image.network(_currentImageUrl!, height: 150, fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(
+                    Center( // Tambahkan Center untuk tampilan gambar
+                      child: _imageFile != null // Jika ada gambar baru dipilih (dari FilePicker)
+                          ? kIsWeb // Cek apakah di web
+                              ? Image.memory(_webImage!, height: 150, fit: BoxFit.cover) // Tampilan untuk web
+                              : Image.file(File(_imageFile!.path!), height: 150, fit: BoxFit.cover) // Tampilan untuk mobile
+                          : widget.kos != null && widget.kos!.hasImage // Jika tidak ada gambar baru, tapi ada gambar lama
+                              ? Image.network(
+                                  '${AppConstants.baseUrl}/images/serve.php?type=kos&id=${widget.kos!.id}', // Panggil serve.php dengan ID Kos
+                                  height: 150,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => Container(
+                                    height: 150,
+                                    color: Colors.grey[200],
+                                    child: const Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                                  ),
+                                )
+                              : Container( // Jika tidak ada gambar sama sekali (baru atau lama)
                                   height: 150,
                                   color: Colors.grey[200],
-                                  child: Icon(Icons.broken_image, size: 50, color: Colors.grey[400]),
-                                ))
-                            : Container(
-                                height: 150,
-                                color: Colors.grey[200],
-                                child: Icon(Icons.image, size: 50, color: Colors.grey[400]),
-                              ),
+                                  child: const Icon(Icons.image, size: 50, color: Colors.grey),
+                                ),
+                    ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _fasilitasUmumController,
@@ -277,7 +283,6 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
     _namaKosController.dispose();
     _alamatController.dispose();
     _deskripsiController.dispose();
-    _fotoUtamaController.dispose(); // Masih ada tapi tidak digunakan langsung untuk input
     _fasilitasUmumController.dispose();
     super.dispose();
   }
