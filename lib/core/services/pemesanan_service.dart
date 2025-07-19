@@ -110,7 +110,7 @@ class PemesananService {
     try {
       final headers = await _authService.getAuthHeaders(); // Dapatkan header otorisasi
 
-      final response = await http.post(
+      final response = await http.put(
         url,
         headers: headers,
         body: json.encode({

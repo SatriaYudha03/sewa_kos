@@ -1,4 +1,4 @@
-// lib/features/owner_dashboard/screens/add_edit_kamar_screen.dart
+// lib/features/owner_dashboard/screens/add_edit_kamar_screen.dart (DIUPDATE)
 import 'package:flutter/material.dart';
 import 'package:sewa_kos/core/models/kamar_kos_model.dart'; // Import KamarKosModel
 import 'package:sewa_kos/core/services/kamar_service.dart'; // Import KamarService
@@ -31,13 +31,22 @@ class _AddEditKamarScreenState extends State<AddEditKamarScreen> {
     if (widget.kamar != null) {
       // Jika mode edit, isi controller dengan data kamar yang ada
       _namaKamarController.text = widget.kamar!.namaKamar;
-      _hargaSewaController.text = widget.kamar!.hargaSewa.toString();
+      _hargaSewaController.text = widget.kamar!.hargaSewa.toStringAsFixed(0); // Format harga tanpa desimal
       _luasKamarController.text = widget.kamar!.luasKamar ?? '';
       _fasilitasController.text = widget.kamar!.fasilitas ?? '';
       _selectedStatus = widget.kamar!.status;
     } else {
       _selectedStatus = 'tersedia'; // Default untuk kamar baru
     }
+  }
+
+  @override
+  void dispose() {
+    _namaKamarController.dispose();
+    _hargaSewaController.dispose();
+    _luasKamarController.dispose();
+    _fasilitasController.dispose();
+    super.dispose();
   }
 
   Future<void> _saveKamar() async {
@@ -52,8 +61,18 @@ class _AddEditKamarScreenState extends State<AddEditKamarScreen> {
     final kamarService = KamarService();
     dynamic response;
 
-    // Ambil fasilitas dari input (misalnya: "AC, TV, KM Dalam")
     final String? fasilitasText = _fasilitasController.text.trim().isNotEmpty ? _fasilitasController.text.trim() : null;
+    final double? hargaSewaParsed = double.tryParse(_hargaSewaController.text);
+
+    if (hargaSewaParsed == null) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Harga sewa tidak valid.'), backgroundColor: AppConstants.errorColor),
+        );
+      }
+      return;
+    }
 
     try {
       if (widget.kamar == null) {
@@ -61,7 +80,7 @@ class _AddEditKamarScreenState extends State<AddEditKamarScreen> {
         response = await kamarService.addKamar(
           kosId: widget.kosId,
           namaKamar: _namaKamarController.text,
-          hargaSewa: double.parse(_hargaSewaController.text),
+          hargaSewa: hargaSewaParsed,
           luasKamar: _luasKamarController.text.isNotEmpty ? _luasKamarController.text : null,
           fasilitas: fasilitasText,
         );
@@ -70,7 +89,7 @@ class _AddEditKamarScreenState extends State<AddEditKamarScreen> {
         response = await kamarService.updateKamar(
           kamarId: widget.kamar!.id,
           namaKamar: _namaKamarController.text,
-          hargaSewa: double.parse(_hargaSewaController.text),
+          hargaSewa: hargaSewaParsed,
           luasKamar: _luasKamarController.text.isNotEmpty ? _luasKamarController.text : null,
           fasilitas: fasilitasText,
           status: _selectedStatus, // Update status juga
@@ -121,7 +140,7 @@ class _AddEditKamarScreenState extends State<AddEditKamarScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(AppConstants.defaultPadding),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -177,30 +196,33 @@ class _AddEditKamarScreenState extends State<AddEditKamarScreen> {
                       maxLines: 3,
                     ),
                     const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: _selectedStatus,
-                      decoration: const InputDecoration(
-                        labelText: 'Status Kamar',
-                        border: OutlineInputBorder(),
+                    // Dropdown untuk Status Kamar hanya muncul di mode EDIT
+                    if (widget.kamar != null) // Hanya tampilkan jika mode edit
+                      DropdownButtonFormField<String>(
+                        value: _selectedStatus,
+                        decoration: const InputDecoration(
+                          labelText: 'Status Kamar',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'tersedia', child: Text('Tersedia')),
+                          DropdownMenuItem(value: 'terisi', child: Text('Terisi')),
+                          DropdownMenuItem(value: 'perbaikan', child: Text('Perbaikan')),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedStatus = value!;
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Status kamar wajib dipilih';
+                          }
+                          return null;
+                        },
                       ),
-                      items: const [
-                        DropdownMenuItem(value: 'tersedia', child: Text('Tersedia')),
-                        DropdownMenuItem(value: 'terisi', child: Text('Terisi')),
-                        DropdownMenuItem(value: 'perbaikan', child: Text('Perbaikan')),
-                      ],
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedStatus = value!;
-                        });
-                      },
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Status kamar wajib dipilih';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 32),
+                    if (widget.kamar != null) const SizedBox(height: 32), // Spasi tambahan jika dropdown muncul
+                    
                     ElevatedButton(
                       onPressed: _isLoading ? null : _saveKamar,
                       style: ElevatedButton.styleFrom(
@@ -221,14 +243,5 @@ class _AddEditKamarScreenState extends State<AddEditKamarScreen> {
               ),
             ),
     );
-  }
-
-  @override
-  void dispose() {
-    _namaKamarController.dispose();
-    _hargaSewaController.dispose();
-    _luasKamarController.dispose();
-    _fasilitasController.dispose();
-    super.dispose();
   }
 }
