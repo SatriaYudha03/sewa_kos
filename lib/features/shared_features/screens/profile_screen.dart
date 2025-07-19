@@ -1,13 +1,13 @@
 // lib/features/shared_features/screens/profile_screen.dart (DIUPDATE)
 import 'package:flutter/material.dart';
 import 'package:sewa_kos/core/constants/app_constants.dart';
-import 'package:sewa_kos/core/services/auth_service.dart'; // Import AuthService
-import 'package:sewa_kos/features/auth/screens/login_screen.dart'; // Import LoginScreen
-import 'package:sewa_kos/core/models/user_model.dart'; // Import UserModel
+import 'package:sewa_kos/core/services/auth_service.dart';
+import 'package:sewa_kos/features/auth/screens/login_screen.dart';
+import 'package:sewa_kos/core/models/user_model.dart';
 
 class ProfileScreen extends StatefulWidget {
-  final User currentUser; // Data user yang diterima dari MainAppShell
-  final VoidCallback onProfileUpdated; // Callback jika profil diupdate (misal setelah edit)
+  final User currentUser;
+  final VoidCallback onProfileUpdated; // Callback jika profil diupdate
 
   const ProfileScreen({super.key, required this.currentUser, required this.onProfileUpdated});
 
@@ -16,49 +16,119 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  late User _displayUser; // User yang ditampilkan, bisa diupdate
+  late User _displayUser; 
   final AuthService _authService = AuthService();
-  bool _isUpdating = false; // State untuk proses update profil (jika ada)
+  bool _isUpdating = false; 
 
   @override
   void initState() {
     super.initState();
-    _displayUser = widget.currentUser; // Inisialisasi dari widget.currentUser
+    _displayUser = widget.currentUser; 
   }
 
-  // Fungsi untuk mengupdate profil (placeholder/simulasi)
-  // Ini akan memanggil API /users/update_profile.php jika Anda membuatnya
-  Future<void> _updateProfile() async {
+  // Fungsi untuk menampilkan dialog edit profil
+  Future<void> _showEditProfileDialog() async {
+    final TextEditingController namaLengkapController = TextEditingController(text: _displayUser.namaLengkap);
+    final TextEditingController noTeleponController = TextEditingController(text: _displayUser.noTelepon);
+    final _formKey = GlobalKey<FormState>();
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Edit Profil'),
+          content: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: namaLengkapController,
+                    decoration: const InputDecoration(labelText: 'Nama Lengkap'),
+                    validator: (value) {
+                      if (value != null && value.isEmpty) return 'Nama Lengkap tidak boleh kosong';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: noTeleponController,
+                    decoration: const InputDecoration(labelText: 'Nomor Telepon'),
+                    keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value != null && value.isEmpty) return 'Nomor Telepon tidak boleh kosong';
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (_formKey.currentState!.validate()) {
+                  // Panggil fungsi update profil
+                  await _updateProfile(
+                    namaLengkap: namaLengkapController.text,
+                    noTelepon: noTeleponController.text,
+                  );
+                  if (mounted) Navigator.pop(context); // Tutup dialog
+                }
+              },
+              child: const Text('Simpan'),
+            ),
+          ],
+        );
+      },
+    );
+
+    // Refresh data pengguna setelah dialog ditutup (jika ada perubahan)
+    widget.onProfileUpdated(); 
+  }
+
+  // Fungsi untuk mengupdate profil ke API
+  Future<void> _updateProfile({String? namaLengkap, String? noTelepon}) async {
     setState(() {
       _isUpdating = true;
     });
-    // TODO: Implementasi update profil ke API
-    // Misalnya:
-    // final response = await _authService.updateUserProfile(
-    //   userId: _displayUser.id,
-    //   namaLengkap: newNamaLengkap,
-    //   noTelepon: newNoTelepon,
-    // );
-    // if (response['status'] == 'success') {
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(content: Text('Profil berhasil diupdate!')),
-    //   );
-    //   widget.onProfileUpdated(); // Panggil callback untuk refresh data di MainAppShell
-    // } else {
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(content: Text(response['message'])),
-    //   );
-    // }
 
-    await Future.delayed(const Duration(seconds: 1)); // Simulasi delay API
-
-    if (mounted) {
-      setState(() {
-        _isUpdating = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Fitur update profil akan segera hadir!')),
+    try {
+      final response = await _authService.updateUserProfile(
+        namaLengkap: namaLengkap,
+        noTelepon: noTelepon,
       );
+
+      if (mounted) {
+        if (response['status'] == 'success') {
+          // Setelah berhasil update di server, _saveUserData sudah dipanggil di AuthService
+          // _displayUser akan diupdate saat MainAppShell memanggil onProfileUpdated dan refresh data
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(response['message'] ?? 'Profil berhasil diperbarui!'), backgroundColor: AppConstants.successColor),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(response['message'] ?? 'Gagal memperbarui profil.'), backgroundColor: AppConstants.errorColor),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: AppConstants.errorColor),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUpdating = false;
+        });
+      }
     }
   }
 
@@ -69,13 +139,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const LoginScreen()),
-        (route) => false, // Hapus semua rute di bawahnya
+        (route) => false,
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Pastikan _displayUser diperbarui jika widget.currentUser berubah
+    // Ini penting jika _refreshUserData() di MainAppShell mengubah User objek
+    if (widget.currentUser != _displayUser) {
+      _displayUser = widget.currentUser;
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profil Saya'),
@@ -84,12 +160,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
-            onPressed: _isUpdating ? null : _updateProfile, // Tombol edit/update
+            onPressed: _isUpdating ? null : _showEditProfileDialog, // <-- Tombol Edit
             tooltip: 'Edit Profil',
           ),
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: _isUpdating ? null : _logout, // Tombol logout
+            onPressed: _isUpdating ? null : _logout,
             tooltip: 'Logout',
           ),
         ],
@@ -112,7 +188,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 30),
-                  // Informasi Profil
+                  // Informasi Akun
                   _buildProfileInfoCard(
                     context,
                     title: 'Informasi Akun',
@@ -123,6 +199,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ],
                   ),
                   const SizedBox(height: AppConstants.defaultPadding),
+                  // Detail Pribadi
                   _buildProfileInfoCard(
                     context,
                     title: 'Detail Pribadi',
@@ -131,7 +208,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _buildProfileInfoRow(Icons.phone, 'Nomor Telepon', _displayUser.noTelepon ?? '- Belum diisi -'),
                     ],
                   ),
-                  const Spacer(), // Mendorong logout ke bawah
+                  const Spacer(),
                   Center(
                     child: ElevatedButton.icon(
                       onPressed: _logout,
@@ -210,7 +287,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             const Divider(height: 20, thickness: 1),
-            ...children, // Memasukkan baris informasi
+            ...children,
           ],
         ),
       ),

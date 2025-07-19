@@ -132,16 +132,16 @@ class AuthService {
     return {'Content-Type': 'application/json'}; // Default jika belum login
   }
 
-  Future<User?> getUserProfile(int userId) async {
-    final url = Uri.parse("$_baseUrl/auth/profile.php"); // Gunakan endpoint profile
+   Future<User?> getUserProfile(int userId) async {
+    final url = Uri.parse("$_baseUrl/auth/profile.php"); 
     
     try {
-      final headers = await getAuthHeaders(); // Perlu header otorisasi
+      final headers = await getAuthHeaders(); 
       final response = await http.get(url, headers: headers);
       final responseBody = json.decode(response.body);
 
       if (response.statusCode == 200 && responseBody['status'] == 'success') {
-        return User.fromJson(responseBody['data']); // Mengembalikan objek User
+        return User.fromJson(responseBody['data']); 
       } else {
         print('Error fetching user profile: ${responseBody['message']}');
         return null;
@@ -150,5 +150,66 @@ class AuthService {
       print('Error during getUserProfile: $e');
       return null;
     }
+  }
+
+   // --- Metode baru: updateUserProfile untuk memperbarui data profil pengguna ---
+  // API PHP: api/auth/update_profile.php (menerima PUT)
+  Future<Map<String, dynamic>> updateUserProfile({
+    String? namaLengkap,
+    String? noTelepon,
+  }) async {
+    final url = Uri.parse("$_baseUrl/auth/update_profile.php");
+    
+    // Pastikan user sedang login untuk mendapatkan headers
+    final User? currentUser = await getLoggedInUser();
+    if (currentUser == null) {
+      return {'status': 'error', 'message': 'User not logged in.'};
+    }
+
+    // Siapkan body data, hanya kirim yang tidak null
+    final Map<String, dynamic> bodyData = {};
+    if (namaLengkap != null) bodyData['nama_lengkap'] = namaLengkap;
+    if (noTelepon != null) bodyData['no_telepon'] = noTelepon;
+
+    // Jika tidak ada data yang diupdate
+    if (bodyData.isEmpty) {
+      return {'status': 'info', 'message': 'Tidak ada perubahan yang dikirim.'};
+    }
+
+    try {
+      final headers = await getAuthHeaders(); // Dapatkan header otorisasi
+      
+      final response = await http.put( // Menggunakan PUT method
+        url,
+        headers: headers,
+        body: json.encode(bodyData),
+      );
+
+      final responseBody = json.decode(response.body);
+
+      if (response.statusCode == 200 && responseBody['status'] == 'success') {
+        // Setelah berhasil update di server, update juga data di Shared Preferences
+        // Panggil getUserProfile untuk mendapatkan data terbaru dari server
+        final updatedUser = await getUserProfile(currentUser.id);
+        if (updatedUser != null) {
+          await _saveUserData(updatedUser); // Simpan data terbaru ke SharedPreferences
+        }
+        return {'status': 'success', 'message': responseBody['message']};
+      } else {
+        return {'status': 'error', 'message': responseBody['message'] ?? 'Gagal memperbarui profil.'};
+      }
+    } catch (e) {
+      print('Error during updateUserProfile: $e');
+      return {'status': 'error', 'message': 'Gagal terhubung ke server. Silakan coba lagi.'};
+    }
+  }
+
+  Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    // Jika Anda menyimpan token JWT, ambil di sini.
+    // Contoh: return prefs.getString('jwt_token');
+    // Untuk saat ini, kita tidak menggunakan JWT, jadi ini mungkin tidak relevan
+    // atau bisa mengembalikan user_id sebagai 'token' semu jika diperlukan.
+    return prefs.getString('user_id')?.toString(); // Mengembalikan user ID sebagai 'token' sementara
   }
 }
