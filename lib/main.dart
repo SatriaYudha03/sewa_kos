@@ -1,14 +1,25 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
+
 import 'package:shared_preferences/shared_preferences.dart'; // Pastikan sudah ada di pubspec.yaml
 import 'package:sewa_kos/core/services/auth_service.dart'; // Import AuthService
 import 'package:sewa_kos/features/auth/screens/login_screen.dart'; // Import LoginScreen
 import 'package:sewa_kos/features/shared_features/screens/main_app_shell.dart'; // Import MainAppShell
 import 'package:sewa_kos/core/models/user_model.dart'; // Import UserModel
 
-void main() {
+// Supabase import
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+Future<void> main() async {
   // Pastikan Flutter binding terinisialisasi sebelum mengakses platform services
-  WidgetsFlutterBinding.ensureInitialized(); 
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Inisialisasi Supabase
+  await Supabase.initialize(
+    url: 'https://kpomlpwjahijkkvkcsbz.supabase.co',
+    anonKey: 'sb_publishable_cIbpHhpHcBxwSInAVOLncw_kMCaRXqk',
+  );
+
   runApp(const SewaKosApp());
 }
 
@@ -22,14 +33,15 @@ class SewaKosApp extends StatelessWidget {
       debugShowCheckedModeBanner: false, // Untuk menyembunyikan banner "DEBUG"
       theme: ThemeData(
         primarySwatch: Colors.blue, // Tema warna utama aplikasi
-        visualDensity: VisualDensity.adaptivePlatformDensity, // Mengatur kepadatan visual sesuai platform
+        visualDensity: VisualDensity
+            .adaptivePlatformDensity, // Mengatur kepadatan visual sesuai platform
       ),
       home: const SplashScreen(), // Aplikasi dimulai dari SplashScreen
       // Named routes (opsional, tapi bagus untuk navigasi kompleks)
       routes: {
         '/login': (context) => const LoginScreen(),
         // Rute lain bisa ditambahkan di sini, misalnya untuk register jika tidak langsung dari login
-        // '/register': (context) => const RegisterScreen(), 
+        // '/register': (context) => const RegisterScreen(),
       },
     );
   }
@@ -45,7 +57,8 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin { // Mixin untuk AnimationController
+    with SingleTickerProviderStateMixin {
+  // Mixin untuk AnimationController
   late AnimationController _controller;
   late Animation<double> _pinDropAnimation;
   late Animation<double> _pinBounceAnimation;
@@ -54,7 +67,8 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _textFadeAnimation;
   late Animation<Offset> _textSlideAnimation;
 
-  final AuthService _authService = AuthService(); // Instance AuthService untuk cek login
+  final AuthService _authService =
+      AuthService(); // Instance AuthService untuk cek login
 
   @override
   void initState() {
@@ -72,7 +86,8 @@ class _SplashScreenState extends State<SplashScreen>
     // Efek memantul untuk pin
     _pinBounceAnimation = CurvedAnimation(
       parent: _controller,
-      curve: Interval( // Hapus 'const' karena .flipped bukanlah konstanta kompilasi
+      curve: Interval(
+        // Hapus 'const' karena .flipped bukanlah konstanta kompilasi
         0.0,
         0.4,
         curve: Curves.elasticOut.flipped, // Efek memantul terbalik
@@ -118,12 +133,13 @@ class _SplashScreenState extends State<SplashScreen>
 
   // Fungsi untuk mengecek status login dan navigasi ke layar selanjutnya
   Future<void> _navigateToNextScreen() async {
-    final user = await _authService.getLoggedInUser(); // Cek user yang tersimpan
+    final user =
+        await _authService.getLoggedInUser(); // Cek user yang tersimpan
     Widget nextScreen; // Widget layar tujuan
 
     if (user != null) {
       // Jika user sudah login, arahkan ke MainAppShell dengan data user
-      nextScreen = MainAppShell(initialUserData: user); 
+      nextScreen = MainAppShell(initialUserData: user);
     } else {
       // Jika user belum login, arahkan ke LoginScreen
       nextScreen = const LoginScreen();
@@ -134,9 +150,11 @@ class _SplashScreenState extends State<SplashScreen>
       PageRouteBuilder(
         pageBuilder: (_, __, ___) => nextScreen,
         transitionsBuilder: (_, animation, __, child) {
-          return FadeTransition(opacity: animation, child: child); // Transisi fade
+          return FadeTransition(
+              opacity: animation, child: child); // Transisi fade
         },
-        transitionDuration: const Duration(milliseconds: 800), // Durasi transisi
+        transitionDuration:
+            const Duration(milliseconds: 800), // Durasi transisi
       ),
     );
   }
@@ -181,7 +199,8 @@ class _SplashScreenState extends State<SplashScreen>
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Text( // Menggunakan const jika teks statis
+                              const Text(
+                                // Menggunakan const jika teks statis
                                 "Sewa",
                                 style: TextStyle(
                                   fontSize: 42,
@@ -206,7 +225,8 @@ class _SplashScreenState extends State<SplashScreen>
                             "Temukan Kos Impianmu",
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.white, // Gunakan Colors.white langsung atau withOpacity
+                              color: Colors
+                                  .white, // Gunakan Colors.white langsung atau withOpacity
                               fontStyle: FontStyle.italic,
                             ),
                           ),

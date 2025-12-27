@@ -38,6 +38,9 @@ dependencies:
   intl: ^0.19.0 # Direkomendasikan versi terbaru (0.18.x versi lama)
   image_picker: ^1.1.2
 
+  # Supabase dependencies
+  supabase_flutter: ^2.5.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -53,6 +56,7 @@ flutter: # <--- PASTIKAN INI SEJAJAR DENGAN 'name:', 'description:', 'dependenci
   # To add assets to your application, add an assets section, like this:
   assets: # <--- INDENTASI 2 SPASI DARI 'flutter:'
     - assets/images/ # <--- INDENTASI 4 SPASI DARI 'flutter:' (atau 2 spasi dari 'assets:')
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
