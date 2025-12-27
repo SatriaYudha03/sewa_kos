@@ -10,11 +10,15 @@ class SupabaseConfig {
   SupabaseConfig._();
 
   /// URL Supabase project
+  /// PENTING: Ganti dengan URL project Supabase Anda
   static const String supabaseUrl = 'https://kpomlpwjahijkkvkcsbz.supabase.co';
 
   /// Anon key Supabase (public key)
+  /// PENTING: Ganti dengan anon key yang valid dari Supabase Dashboard
+  /// Format yang benar: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xxxxx
+  /// Dapatkan dari: Supabase Dashboard > Project Settings > API > Project API keys > anon public
   static const String supabaseAnonKey =
-      'sb_publishable_cIbpHhpHcBxwSInAVOLncw_kMCaRXqk';
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtwb21scHdqYWhpamtrdmtjc2J6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY4NDk2MjYsImV4cCI6MjA4MjQyNTYyNn0.Lu5h0MOTz_D5KNHdeP2iUiW1UpOpN8DXj1QIOv4mdm0';
 
   /// Mendapatkan instance Supabase client
   static SupabaseClient get client => Supabase.instance.client;

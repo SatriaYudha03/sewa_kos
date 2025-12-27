@@ -4,8 +4,10 @@
 
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 
 import '../config/supabase_config.dart';
 import '../models/user_model.dart';
@@ -29,6 +31,10 @@ class AuthService {
     try {
       final hashedPassword = _hashPassword(password);
 
+      // Debug: Print untuk melihat hash password
+      debugPrint('🔐 Attempting login for: $usernameOrEmail');
+      debugPrint('🔑 Hashed password: $hashedPassword');
+
       // Query ke Supabase untuk mencari user
       final response = await SupabaseConfig.client
           .from(SupabaseConfig.usersTable)
@@ -36,6 +42,8 @@ class AuthService {
           .or('username.eq.$usernameOrEmail,email.eq.$usernameOrEmail')
           .eq('password', hashedPassword)
           .maybeSingle();
+
+      debugPrint('📦 Supabase response: $response');
 
       if (response == null) {
         return {
@@ -52,10 +60,20 @@ class AuthService {
         'message': 'Login berhasil! Selamat datang, ${user.username}.',
         'user': user,
       };
-    } catch (e) {
+    } on PostgrestException catch (e) {
+      debugPrint('❌ PostgrestException: ${e.message}');
+      debugPrint('❌ Code: ${e.code}');
+      debugPrint('❌ Details: ${e.details}');
       return {
         'status': 'error',
-        'message': 'Gagal terhubung ke server. Silakan coba lagi.',
+        'message': 'Database error: ${e.message}',
+      };
+    } catch (e, stackTrace) {
+      debugPrint('❌ Login error: $e');
+      debugPrint('❌ Stack trace: $stackTrace');
+      return {
+        'status': 'error',
+        'message': 'Gagal terhubung ke server: ${e.toString()}',
       };
     }
   }
@@ -70,6 +88,9 @@ class AuthService {
     String? noTelepon,
   }) async {
     try {
+      debugPrint(
+          '📝 Attempting registration for: $username, $email, role: $role');
+
       // Cek apakah username sudah ada
       final existingUsername = await SupabaseConfig.client
           .from(SupabaseConfig.usersTable)
@@ -78,6 +99,7 @@ class AuthService {
           .maybeSingle();
 
       if (existingUsername != null) {
+        debugPrint('❌ Username already exists');
         return {
           'status': 'error',
           'message': 'Username sudah digunakan.',
@@ -92,6 +114,7 @@ class AuthService {
           .maybeSingle();
 
       if (existingEmail != null) {
+        debugPrint('❌ Email already exists');
         return {
           'status': 'error',
           'message': 'Email sudah digunakan.',
@@ -99,14 +122,28 @@ class AuthService {
       }
 
       // Dapatkan role_id berdasarkan role_name
+      debugPrint('🔍 Looking for role: $role');
       final roleData = await SupabaseConfig.client
           .from(SupabaseConfig.rolesTable)
           .select('id')
           .eq('role_name', role)
-          .single();
+          .maybeSingle();
+
+      debugPrint('📦 Role data: $roleData');
+
+      if (roleData == null) {
+        debugPrint('❌ Role not found: $role');
+        return {
+          'status': 'error',
+          'message':
+              'Role "$role" tidak ditemukan. Pastikan tabel roles sudah memiliki data.',
+        };
+      }
 
       final roleId = roleData['id'] as int;
       final hashedPassword = _hashPassword(password);
+
+      debugPrint('✅ Inserting new user with role_id: $roleId');
 
       // Insert user baru
       await SupabaseConfig.client.from(SupabaseConfig.usersTable).insert({
@@ -118,14 +155,26 @@ class AuthService {
         'no_telepon': noTelepon,
       });
 
+      debugPrint('✅ Registration successful!');
+
       return {
         'status': 'success',
         'message': 'Registrasi berhasil! Silakan login.',
       };
-    } catch (e) {
+    } on PostgrestException catch (e) {
+      debugPrint('❌ PostgrestException during registration: ${e.message}');
+      debugPrint('❌ Code: ${e.code}');
+      debugPrint('❌ Details: ${e.details}');
       return {
         'status': 'error',
-        'message': 'Gagal melakukan registrasi. Silakan coba lagi.',
+        'message': 'Database error: ${e.message}',
+      };
+    } catch (e, stackTrace) {
+      debugPrint('❌ Registration error: $e');
+      debugPrint('❌ Stack trace: $stackTrace');
+      return {
+        'status': 'error',
+        'message': 'Gagal melakukan registrasi: ${e.toString()}',
       };
     }
   }
