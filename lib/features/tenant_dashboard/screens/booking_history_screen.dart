@@ -1,9 +1,11 @@
-// lib/features/tenant_dashboard/screens/booking_history_screen.dart
+/// Layar untuk melihat riwayat pemesanan penyewa
+library;
+
 import 'package:flutter/material.dart';
 import 'package:sewa_kos/core/constants/app_constants.dart';
 import 'package:sewa_kos/core/models/pemesanan_model.dart';
 import 'package:sewa_kos/core/services/pemesanan_service.dart';
-import 'package:sewa_kos/features/tenant_dashboard/screens/upload_payment_proof_screen.dart'; // Import layar baru
+import 'package:sewa_kos/features/tenant_dashboard/screens/upload_payment_proof_screen.dart';
 
 class BookingHistoryScreen extends StatefulWidget {
   const BookingHistoryScreen({super.key});
@@ -24,15 +26,16 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
 
   Future<void> _fetchBookingHistory() async {
     setState(() {
-      _bookingHistoryFuture = _pemesananService.getListPemesanan();
+      _bookingHistoryFuture = _pemesananService.getMyPemesanan();
     });
   }
 
   void _navigateToBookingDetail(Pemesanan pemesanan) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Melihat detail pemesanan ${pemesanan.id} di ${pemesanan.namaKos}.')),
+      SnackBar(
+          content: Text(
+              'Melihat detail pemesanan ${pemesanan.id} di ${pemesanan.namaKos}.')),
     );
-    // TODO: Navigasi ke BookingDetailScreen jika ada, atau PaymentDetailScreen
   }
 
   void _navigateToUploadProofScreen(Pemesanan pemesanan) {
@@ -95,7 +98,8 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.bookmark_border, size: 80, color: Colors.grey),
+                  const Icon(Icons.bookmark_border,
+                      size: 80, color: Colors.grey),
                   const SizedBox(height: 20),
                   const Text(
                     'Anda belum memiliki riwayat pemesanan.',
@@ -117,45 +121,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
               itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
                 final pemesanan = snapshot.data![index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: AppConstants.defaultMargin / 2),
-                  elevation: 3,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius / 2)),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.all(AppConstants.defaultPadding),
-                    title: Text(
-                      '${pemesanan.namaKamar ?? 'Kamar Tidak Dikenal'} di ${pemesanan.namaKos ?? 'Kos Tidak Dikenal'}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 4),
-                        Text('Oleh: ${pemesanan.ownerName ?? pemesanan.ownerUsername}'),
-                        Text('Mulai Sewa: ${pemesanan.tanggalMulai.toLocal().toString().split(' ')[0]}'),
-                        Text('Durasi: ${pemesanan.durasiSewa} bulan'),
-                        Text('Total: Rp ${pemesanan.totalHarga.toStringAsFixed(0)}'),
-                        const SizedBox(height: 4),
-                        Text('Status: ${pemesanan.statusPemesanan.replaceAll('_', ' ').toUpperCase()}',
-                          style: TextStyle(
-                            color: _getStatusColor(pemesanan.statusPemesanan),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    trailing: (pemesanan.statusPemesanan == 'menunggu_pembayaran')
-                        ? IconButton(
-                            icon: const Icon(Icons.payment, color: AppConstants.accentColor),
-                            onPressed: () {
-                              _navigateToUploadProofScreen(pemesanan);
-                            },
-                            tooltip: 'Upload Bukti Pembayaran',
-                          )
-                        : null,
-                    onTap: () => _navigateToBookingDetail(pemesanan),
-                  ),
-                );
+                return _buildPemesananCard(pemesanan);
               },
             );
           }
@@ -164,20 +130,65 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     );
   }
 
-  Color _getStatusColor(String status) {
+  Widget _buildPemesananCard(Pemesanan pemesanan) {
+    return Card(
+      margin:
+          const EdgeInsets.symmetric(vertical: AppConstants.defaultMargin / 2),
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+          borderRadius:
+              BorderRadius.circular(AppConstants.defaultBorderRadius / 2)),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(AppConstants.defaultPadding),
+        title: Text(
+          '${pemesanan.namaKamar ?? 'Kamar Tidak Dikenal'} di ${pemesanan.namaKos ?? 'Kos Tidak Dikenal'}',
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Text('Oleh: ${pemesanan.ownerName ?? pemesanan.ownerUsername}'),
+            Text(
+                'Mulai Sewa: ${pemesanan.tanggalMulai.toLocal().toString().split(' ')[0]}'),
+            Text('Durasi: ${pemesanan.durasiSewa} bulan'),
+            Text('Total: Rp ${pemesanan.totalHarga.toStringAsFixed(0)}'),
+            const SizedBox(height: 4),
+            Text(
+              'Status: ${pemesanan.statusPemesanan.displayName}',
+              style: TextStyle(
+                color: _getStatusColor(pemesanan.statusPemesanan),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        trailing: (pemesanan.statusPemesanan ==
+                StatusPemesanan.menungguPembayaran)
+            ? IconButton(
+                icon:
+                    const Icon(Icons.payment, color: AppConstants.accentColor),
+                onPressed: () {
+                  _navigateToUploadProofScreen(pemesanan);
+                },
+                tooltip: 'Upload Bukti Pembayaran',
+              )
+            : null,
+        onTap: () => _navigateToBookingDetail(pemesanan),
+      ),
+    );
+  }
+
+  Color _getStatusColor(StatusPemesanan status) {
     switch (status) {
-      case 'menunggu_pembayaran':
+      case StatusPemesanan.menungguPembayaran:
         return Colors.orange;
-      case 'terkonfirmasi':
+      case StatusPemesanan.terkonfirmasi:
         return Colors.green;
-      case 'dibatalkan':
+      case StatusPemesanan.dibatalkan:
         return Colors.red;
-      case 'selesai':
+      case StatusPemesanan.selesai:
         return Colors.grey;
-      case 'menunggu_verifikasi':
-        return Colors.blue;
-      default:
-        return Colors.black;
     }
   }
 }

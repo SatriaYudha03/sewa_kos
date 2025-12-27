@@ -16,7 +16,8 @@ class MyKosScreen extends StatefulWidget {
 class _MyKosScreenState extends State<MyKosScreen> {
   final KosService _kosService = KosService();
   Future<List<Kos>>? _myKosFuture;
-  int _refreshKey = 0; // Tambahkan refresh key untuk FutureBuilder dan cache-busting gambar
+  int _refreshKey =
+      0; // Tambahkan refresh key untuk FutureBuilder dan cache-busting gambar
 
   @override
   void initState() {
@@ -35,7 +36,7 @@ class _MyKosScreenState extends State<MyKosScreen> {
     print('DEBUG: _fetchMyKos triggered. Old refreshKey: $_refreshKey');
     // Langkah 1: Set Future ke null untuk memaksa FutureBuilder ke state waiting
     setState(() {
-      _myKosFuture = null; 
+      _myKosFuture = null;
       _refreshKey++; // Tingkatkan key untuk memastikan rebuild
       print('DEBUG: _myKosFuture set to null, new refreshKey: $_refreshKey');
     });
@@ -61,7 +62,7 @@ class _MyKosScreenState extends State<MyKosScreen> {
       _fetchMyKos(); // Refresh daftar setelah berhasil simpan/edit
     }
   }
-  
+
   Future<void> _navigateToKamarManagement(Kos kos) async {
     await Navigator.push(
       context,
@@ -71,7 +72,8 @@ class _MyKosScreenState extends State<MyKosScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print('DEBUG: MyKosScreen build method called. Current refreshKey: $_refreshKey');
+    print(
+        'DEBUG: MyKosScreen build method called. Current refreshKey: $_refreshKey');
     return Scaffold(
       appBar: AppBar(
         title: const Text('Kos Saya'),
@@ -80,13 +82,15 @@ class _MyKosScreenState extends State<MyKosScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _fetchMyKos, // Tombol refresh memanggil fungsi _fetchMyKos
+            onPressed:
+                _fetchMyKos, // Tombol refresh memanggil fungsi _fetchMyKos
             tooltip: 'Refresh Daftar Kos',
           ),
         ],
       ),
       body: FutureBuilder<List<Kos>>(
-        key: ValueKey(_refreshKey), // Gunakan ValueKey di sini untuk memaksa rebuild FutureBuilder
+        key: ValueKey(
+            _refreshKey), // Gunakan ValueKey di sini untuk memaksa rebuild FutureBuilder
         future: _myKosFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -98,10 +102,10 @@ class _MyKosScreenState extends State<MyKosScreen> {
                 children: [
                   const Icon(Icons.error, size: 80, color: Colors.red),
                   const SizedBox(height: 20),
-                  Text( 
+                  Text(
                     'Error: ${snapshot.error}',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.red), 
+                    style: const TextStyle(color: Colors.red),
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton.icon(
@@ -117,7 +121,7 @@ class _MyKosScreenState extends State<MyKosScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.home, size: 80, color: Colors.grey), 
+                  const Icon(Icons.home, size: 80, color: Colors.grey),
                   const SizedBox(height: 20),
                   const Text(
                     'Anda belum memiliki properti kos.',
@@ -126,11 +130,12 @@ class _MyKosScreenState extends State<MyKosScreen> {
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton.icon(
-                    onPressed: () => _navigateToAddEditKos(), 
+                    onPressed: () => _navigateToAddEditKos(),
                     icon: const Icon(Icons.add_home),
                     label: const Text('Tambah Kos Baru'),
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12),
                     ),
                   ),
                 ],
@@ -144,50 +149,54 @@ class _MyKosScreenState extends State<MyKosScreen> {
                 final kos = snapshot.data![index];
 
                 ImageProvider? backgroundImage;
-                if (kos.hasImage) {
-                  // Tambahkan parameter cache-busting
-                  final fullImageUrl = '${AppConstants.baseUrl}/images/serve.php?type=kos&id=${kos.id}&_=${DateTime.now().millisecondsSinceEpoch}';
-                  print('DEBUG_IMAGE_URL: Mencoba memuat gambar kos dari: $fullImageUrl');
-                  backgroundImage = NetworkImage(fullImageUrl);
+                if (kos.hasImage && kos.fotoUtamaUrl != null) {
+                  // Gunakan URL dari Supabase Storage
+                  backgroundImage = NetworkImage(kos.fotoUtamaUrl!);
                 } else {
-                  backgroundImage = const AssetImage(AppConstants.imageAssetPlaceholderKos);
+                  backgroundImage =
+                      const AssetImage(AppConstants.imageAssetPlaceholderKos);
                 }
 
                 return Card(
-                  margin: const EdgeInsets.symmetric(vertical: AppConstants.defaultMargin / 2),
+                  margin: const EdgeInsets.symmetric(
+                      vertical: AppConstants.defaultMargin / 2),
                   elevation: 4,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                   child: ListTile(
-                    contentPadding: const EdgeInsets.all(AppConstants.defaultPadding),
+                    contentPadding:
+                        const EdgeInsets.all(AppConstants.defaultPadding),
                     leading: CircleAvatar(
                       radius: 30,
                       backgroundColor: Colors.blue.shade100,
                       backgroundImage: backgroundImage,
                       onBackgroundImageError: (exception, stackTrace) {
-                        print('ERROR_IMAGE_LOAD: Gagal memuat gambar untuk ${kos.namaKos}: $exception');
-                        if (mounted) {
-                            setState(() {
-                                backgroundImage = const AssetImage(AppConstants.imageAssetPlaceholderKos);
-                            });
-                        }
+                        debugPrint(
+                            'ERROR_IMAGE_LOAD: Gagal memuat gambar untuk ${kos.namaKos}: $exception');
                       },
-                      child: (!kos.hasImage) && backgroundImage is AssetImage
-                          ? const Icon(Icons.apartment, size: 30, color: AppConstants.primaryColor)
+                      child: !kos.hasImage
+                          ? const Icon(Icons.apartment,
+                              size: 30, color: AppConstants.primaryColor)
                           : null,
                     ),
                     title: Text(
                       kos.namaKos,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 4),
-                        Text(kos.alamat, style: const TextStyle(fontSize: 14)),
-                        if (kos.fasilitasUmum != null && kos.fasilitasUmum!.isNotEmpty)
+                        Text(kos.alamat ?? '',
+                            style: const TextStyle(fontSize: 14)),
+                        if (kos.fasilitasUmum != null &&
+                            kos.fasilitasUmum!.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 4.0),
-                            child: Text('Fasilitas: ${kos.fasilitasUmum}', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                            child: Text('Fasilitas: ${kos.fasilitasUmum}',
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.grey[600])),
                           ),
                       ],
                     ),
@@ -195,18 +204,20 @@ class _MyKosScreenState extends State<MyKosScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.meeting_room, color: Colors.indigo),
+                          icon: const Icon(Icons.meeting_room,
+                              color: Colors.indigo),
                           onPressed: () => _navigateToKamarManagement(kos),
                           tooltip: 'Kelola Kamar',
                         ),
                         IconButton(
                           icon: const Icon(Icons.edit, color: Colors.orange),
-                          onPressed: () => _navigateToAddEditKos(kos: kos), 
+                          onPressed: () => _navigateToAddEditKos(kos: kos),
                           tooltip: 'Edit Kos',
                         ),
                         IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _confirmDeleteKos(kos.id, kos.namaKos),
+                          onPressed: () =>
+                              _confirmDeleteKos(kos.id, kos.namaKos),
                           tooltip: 'Hapus Kos',
                         ),
                       ],
@@ -224,7 +235,7 @@ class _MyKosScreenState extends State<MyKosScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _navigateToAddEditKos(), 
+        onPressed: () => _navigateToAddEditKos(),
         backgroundColor: AppConstants.primaryColor,
         child: const Icon(Icons.add, color: Colors.white),
       ),
@@ -237,7 +248,8 @@ class _MyKosScreenState extends State<MyKosScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Hapus Kos'),
-          content: Text('Apakah Anda yakin ingin menghapus kos "$namaKos"? Semua kamar dan pemesanan terkait juga akan terhapus.'),
+          content: Text(
+              'Apakah Anda yakin ingin menghapus kos "$namaKos"? Semua kamar dan pemesanan terkait juga akan terhapus.'),
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -259,26 +271,33 @@ class _MyKosScreenState extends State<MyKosScreen> {
 
   Future<void> _deleteKos(int kosId) async {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Menghapus kos...'), duration: Duration(seconds: 1)),
+      const SnackBar(
+          content: Text('Menghapus kos...'), duration: Duration(seconds: 1)),
     );
     try {
       final response = await _kosService.deleteKos(kosId);
       if (mounted) {
         if (response['status'] == 'success') {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(response['message'] ?? 'Kos berhasil dihapus.'), backgroundColor: AppConstants.successColor),
+            SnackBar(
+                content: Text(response['message'] ?? 'Kos berhasil dihapus.'),
+                backgroundColor: AppConstants.successColor),
           );
           _fetchMyKos(); // Refresh daftar setelah penghapusan
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(response['message'] ?? 'Gagal menghapus kos.'), backgroundColor: AppConstants.errorColor),
+            SnackBar(
+                content: Text(response['message'] ?? 'Gagal menghapus kos.'),
+                backgroundColor: AppConstants.errorColor),
           );
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: AppConstants.errorColor),
+          SnackBar(
+              content: Text('Error: ${e.toString()}'),
+              backgroundColor: AppConstants.errorColor),
         );
       }
     }

@@ -9,27 +9,30 @@ class ProfileScreen extends StatefulWidget {
   final User currentUser;
   final VoidCallback onProfileUpdated; // Callback jika profil diupdate
 
-  const ProfileScreen({super.key, required this.currentUser, required this.onProfileUpdated});
+  const ProfileScreen(
+      {super.key, required this.currentUser, required this.onProfileUpdated});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  late User _displayUser; 
+  late User _displayUser;
   final AuthService _authService = AuthService();
-  bool _isUpdating = false; 
+  bool _isUpdating = false;
 
   @override
   void initState() {
     super.initState();
-    _displayUser = widget.currentUser; 
+    _displayUser = widget.currentUser;
   }
 
   // Fungsi untuk menampilkan dialog edit profil
   Future<void> _showEditProfileDialog() async {
-    final TextEditingController namaLengkapController = TextEditingController(text: _displayUser.namaLengkap);
-    final TextEditingController noTeleponController = TextEditingController(text: _displayUser.noTelepon);
+    final TextEditingController namaLengkapController =
+        TextEditingController(text: _displayUser.namaLengkap);
+    final TextEditingController noTeleponController =
+        TextEditingController(text: _displayUser.noTelepon);
     final _formKey = GlobalKey<FormState>();
 
     await showDialog(
@@ -45,19 +48,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   TextFormField(
                     controller: namaLengkapController,
-                    decoration: const InputDecoration(labelText: 'Nama Lengkap'),
+                    decoration:
+                        const InputDecoration(labelText: 'Nama Lengkap'),
                     validator: (value) {
-                      if (value != null && value.isEmpty) return 'Nama Lengkap tidak boleh kosong';
+                      if (value != null && value.isEmpty)
+                        return 'Nama Lengkap tidak boleh kosong';
                       return null;
                     },
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: noTeleponController,
-                    decoration: const InputDecoration(labelText: 'Nomor Telepon'),
+                    decoration:
+                        const InputDecoration(labelText: 'Nomor Telepon'),
                     keyboardType: TextInputType.phone,
                     validator: (value) {
-                      if (value != null && value.isEmpty) return 'Nomor Telepon tidak boleh kosong';
+                      if (value != null && value.isEmpty)
+                        return 'Nomor Telepon tidak boleh kosong';
                       return null;
                     },
                   ),
@@ -89,7 +96,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
 
     // Refresh data pengguna setelah dialog ditutup (jika ada perubahan)
-    widget.onProfileUpdated(); 
+    widget.onProfileUpdated();
   }
 
   // Fungsi untuk mengupdate profil ke API
@@ -100,6 +107,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       final response = await _authService.updateUserProfile(
+        userId: _displayUser.id,
         namaLengkap: namaLengkap,
         noTelepon: noTelepon,
       );
@@ -109,18 +117,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Setelah berhasil update di server, _saveUserData sudah dipanggil di AuthService
           // _displayUser akan diupdate saat MainAppShell memanggil onProfileUpdated dan refresh data
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(response['message'] ?? 'Profil berhasil diperbarui!'), backgroundColor: AppConstants.successColor),
+            SnackBar(
+                content:
+                    Text(response['message'] ?? 'Profil berhasil diperbarui!'),
+                backgroundColor: AppConstants.successColor),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(response['message'] ?? 'Gagal memperbarui profil.'), backgroundColor: AppConstants.errorColor),
+            SnackBar(
+                content:
+                    Text(response['message'] ?? 'Gagal memperbarui profil.'),
+                backgroundColor: AppConstants.errorColor),
           );
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: AppConstants.errorColor),
+          SnackBar(
+              content: Text('Error: ${e.toString()}'),
+              backgroundColor: AppConstants.errorColor),
         );
       }
     } finally {
@@ -160,7 +176,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
-            onPressed: _isUpdating ? null : _showEditProfileDialog, // <-- Tombol Edit
+            onPressed:
+                _isUpdating ? null : _showEditProfileDialog, // <-- Tombol Edit
             tooltip: 'Edit Profil',
           ),
           IconButton(
@@ -183,7 +200,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       backgroundColor: AppConstants.accentColor,
                       child: Text(
                         _displayUser.username[0].toUpperCase(),
-                        style: const TextStyle(fontSize: 48, color: Colors.white, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                            fontSize: 48,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -193,9 +213,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     context,
                     title: 'Informasi Akun',
                     children: [
-                      _buildProfileInfoRow(Icons.person, 'Username', _displayUser.username),
-                      _buildProfileInfoRow(Icons.email, 'Email', _displayUser.email),
-                      _buildProfileInfoRow(Icons.info_outline, 'Role', _displayUser.roleName.toUpperCase()),
+                      _buildProfileInfoRow(
+                          Icons.person, 'Username', _displayUser.username),
+                      _buildProfileInfoRow(
+                          Icons.email, 'Email', _displayUser.email),
+                      _buildProfileInfoRow(Icons.info_outline, 'Role',
+                          (_displayUser.roleName ?? 'User').toUpperCase()),
                     ],
                   ),
                   const SizedBox(height: AppConstants.defaultPadding),
@@ -204,8 +227,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     context,
                     title: 'Detail Pribadi',
                     children: [
-                      _buildProfileInfoRow(Icons.badge, 'Nama Lengkap', _displayUser.namaLengkap ?? '- Belum diisi -'),
-                      _buildProfileInfoRow(Icons.phone, 'Nomor Telepon', _displayUser.noTelepon ?? '- Belum diisi -'),
+                      _buildProfileInfoRow(Icons.badge, 'Nama Lengkap',
+                          _displayUser.namaLengkap ?? '- Belum diisi -'),
+                      _buildProfileInfoRow(Icons.phone, 'Nomor Telepon',
+                          _displayUser.noTelepon ?? '- Belum diisi -'),
                     ],
                   ),
                   const Spacer(),
@@ -213,12 +238,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: ElevatedButton.icon(
                       onPressed: _logout,
                       icon: const Icon(Icons.logout, color: Colors.white),
-                      label: const Text('Logout', style: TextStyle(color: Colors.white, fontSize: 16)),
+                      label: const Text('Logout',
+                          style: TextStyle(color: Colors.white, fontSize: 16)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppConstants.errorColor,
-                        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 40, vertical: 15),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+                          borderRadius: BorderRadius.circular(
+                              AppConstants.defaultBorderRadius),
                         ),
                         elevation: 5,
                       ),
@@ -268,10 +296,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // Helper untuk membuat card informasi profil
-  Widget _buildProfileInfoCard(BuildContext context, {required String title, required List<Widget> children}) {
+  Widget _buildProfileInfoCard(BuildContext context,
+      {required String title, required List<Widget> children}) {
     return Card(
       elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius)),
+      shape: RoundedRectangleBorder(
+          borderRadius:
+              BorderRadius.circular(AppConstants.defaultBorderRadius)),
       margin: const EdgeInsets.symmetric(vertical: 8.0),
       child: Padding(
         padding: const EdgeInsets.all(AppConstants.defaultPadding),

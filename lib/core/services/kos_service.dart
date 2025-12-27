@@ -1,227 +1,240 @@
-// lib/core/services/kos_service.dart
-import 'package:http/http.dart' as http;
+/// KosService - Layanan untuk mengelola data kos menggunakan Supabase
+///
+/// Mengelola CRUD untuk data kos (properti kos)
+
 import 'dart:convert';
-import 'package:sewa_kos/core/constants/app_constants.dart'; // Sesuaikan import AppConstants
-import 'package:sewa_kos/core/models/kos_model.dart'; // Import KosModel
-import 'package:sewa_kos/core/models/kamar_kos_model.dart'; // Import KamarKosModel
-import 'package:sewa_kos/core/services/auth_service.dart'; // Import AuthService
+import 'dart:typed_data';
+
+import '../config/supabase_config.dart';
+import '../models/kos_model.dart';
+import 'auth_service.dart';
 
 class KosService {
-  final String _baseUrl = AppConstants.baseUrl;
-  final AuthService _authService = AuthService(); // Inisialisasi AuthService
+  final AuthService _authService = AuthService();
 
-  // Method untuk MENAMBAH KOS BARU
-  // API PHP: api/kos/add.php
+  /// Menambah kos baru
+  /// [fotoUtama] - base64 encoded string of image
   Future<Map<String, dynamic>> addKos({
     required String namaKos,
     required String alamat,
-    String? deskripsi, // Nullable sesuai model dan API
-    String? fotoUtama, // Nullable sesuai model dan API
-    String? fasilitasUmum, // Nullable sesuai model dan API
+    String? deskripsi,
+    String? fasilitasUmum,
+    String? fotoUtama, // base64 string
   }) async {
-    final url = Uri.parse("$_baseUrl/kos/add.php");
-    
     try {
-      final headers = await _authService.getAuthHeaders(); // Dapatkan header otorisasi
-
-      final response = await http.post(
-        url,
-        headers: headers, // Gunakan header otorisasi
-        body: json.encode({
-          'nama_kos': namaKos,
-          'alamat': alamat,
-          'deskripsi': deskripsi,
-          'foto_utama': fotoUtama,
-          'fasilitas_umum': fasilitasUmum,
-        }),
-      );
-
-      final responseBody = json.decode(response.body);
-
-      if (response.statusCode == 201 && responseBody['status'] == 'success') {
-        return {'status': 'success', 'message': responseBody['message'], 'data': responseBody['data']};
-      } else {
-        return {'status': 'error', 'message': responseBody['message'] ?? 'Gagal menambah kos.'};
+      final currentUser = await _authService.getLoggedInUser();
+      if (currentUser == null) {
+        return {'status': 'error', 'message': 'Silakan login terlebih dahulu.'};
       }
+
+      String? fotoUtamaUrl;
+
+      // Upload foto jika ada
+      if (fotoUtama != null && fotoUtama.isNotEmpty) {
+        fotoUtamaUrl = await _uploadKosImageFromBase64(
+          userId: currentUser.id,
+          base64Image: fotoUtama,
+        );
+      }
+
+      // Insert data kos
+      final response = await SupabaseConfig.client
+          .from(SupabaseConfig.kosTable)
+          .insert({
+            'user_id': currentUser.id,
+            'nama_kos': namaKos,
+            'alamat': alamat,
+            'deskripsi': deskripsi,
+            'foto_utama_url': fotoUtamaUrl,
+            'fasilitas_umum': fasilitasUmum,
+          })
+          .select()
+          .single();
+
+      return {
+        'status': 'success',
+        'message': 'Kos berhasil ditambahkan.',
+        'data': Kos.fromJson(response),
+      };
     } catch (e) {
-      print('Error during addKos: $e');
-      return {'status': 'error', 'message': 'Gagal terhubung ke server. Silakan coba lagi.'};
+      return {
+        'status': 'error',
+        'message': 'Gagal menambahkan kos. Silakan coba lagi.',
+      };
     }
   }
 
-  // Method untuk MENGAMBIL DAFTAR KOS
-  // API: api/kos/list.php
-  Future<List<Kos>> getListKos() async {
-    final url = Uri.parse("$_baseUrl/kos/list.php");
-    
+  /// Upload gambar kos ke Supabase Storage dari base64 string
+  Future<String?> _uploadKosImageFromBase64({
+    required int userId,
+    required String base64Image,
+  }) async {
     try {
-      final headers = await _authService.getAuthHeaders(); // Dapatkan header otorisasi
+      final fileName =
+          'kos_${userId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
 
-      final response = await http.get(
-        url,
-        headers: headers, // Kirim header otorisasi
-      );
+      final Uint8List fileBytes = base64Decode(base64Image);
 
-      final responseBody = json.decode(response.body);
+      await SupabaseConfig.client.storage
+          .from(SupabaseConfig.kosImagesBucket)
+          .uploadBinary(fileName, fileBytes);
 
-      if (response.statusCode == 200 && responseBody['status'] == 'success') {
-        final List<dynamic> kosData = responseBody['data'];
-        return kosData.map((json) => Kos.fromJson(json)).toList();
-      } else {
-        print('Error fetching kos list: ${responseBody['message']}');
-        // Kembalikan list kosong jika gagal, agar aplikasi tidak crash
-        return []; 
-      }
+      return SupabaseConfig.client.storage
+          .from(SupabaseConfig.kosImagesBucket)
+          .getPublicUrl(fileName);
     } catch (e) {
-      print('Error during getListKos: $e');
-      // Tangani error jaringan
-      return [];
-    }
-  }
-
-  // Method untuk MENGAMBIL DETAIL KOS berdasarkan ID
-  // API: api/kos/detail.php?id={id_kos}
-  Future<Kos?> getKosDetail(int kosId) async {
-    final url = Uri.parse("$_baseUrl/kos/detail.php?id=$kosId");
-    
-    try {
-      final headers = await _authService.getAuthHeaders(); // Dapatkan header otorisasi
-
-      final response = await http.get(
-        url,
-        headers: headers, // Kirim header otorisasi
-      );
-
-      final responseBody = json.decode(response.body);
-
-      if (response.statusCode == 200 && responseBody['status'] == 'success') {
-        return Kos.fromJson(responseBody['data']);
-      } else {
-        print('Error fetching kos detail: ${responseBody['message']}');
-        return null; 
-      }
-    } catch (e) {
-      print('Error during getKosDetail: $e');
       return null;
     }
   }
 
-  // Method untuk MEMPERBARUI DATA KOS
-  // API PHP: api/kos/update.php (menggunakan method PUT)
+  /// Mengambil semua daftar kos
+  Future<List<Kos>> getListKos() async {
+    try {
+      final response = await SupabaseConfig.client
+          .from(SupabaseConfig.kosTable)
+          .select('*, users(username, nama_lengkap)')
+          .order('created_at', ascending: false);
+
+      return (response as List).map((json) => Kos.fromJson(json)).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Mengambil daftar kos milik user tertentu (pemilik kos)
+  Future<List<Kos>> getMyKosList() async {
+    try {
+      final currentUser = await _authService.getLoggedInUser();
+      if (currentUser == null) return [];
+
+      final response = await SupabaseConfig.client
+          .from(SupabaseConfig.kosTable)
+          .select('*, users(username, nama_lengkap)')
+          .eq('user_id', currentUser.id)
+          .order('created_at', ascending: false);
+
+      return (response as List).map((json) => Kos.fromJson(json)).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Mengambil detail kos berdasarkan ID
+  Future<Kos?> getKosDetail(int kosId) async {
+    try {
+      final response = await SupabaseConfig.client
+          .from(SupabaseConfig.kosTable)
+          .select('*, users(username, nama_lengkap)')
+          .eq('id', kosId)
+          .single();
+
+      return Kos.fromJson(response);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Memperbarui data kos
+  /// [fotoUtama] - base64 encoded string of new image
   Future<Map<String, dynamic>> updateKos({
     required int id,
     String? namaKos,
     String? alamat,
     String? deskripsi,
-    String? fotoUtama,
     String? fasilitasUmum,
+    String? fotoUtama, // base64 string
   }) async {
-    final url = Uri.parse("$_baseUrl/kos/update.php");
-    
-    // Siapkan body secara dinamis agar hanya mengirim field yang tidak null
-    final Map<String, dynamic> bodyData = {
-      'id': id, // ID Kos wajib dikirim untuk update
-    };
-    if (namaKos != null) bodyData['nama_kos'] = namaKos;
-    if (alamat != null) bodyData['alamat'] = alamat;
-    if (deskripsi != null) bodyData['deskripsi'] = deskripsi;
-    if (fotoUtama != null) bodyData['foto_utama'] = fotoUtama;
-    if (fasilitasUmum != null) bodyData['fasilitas_umum'] = fasilitasUmum;
-
     try {
-      final headers = await _authService.getAuthHeaders(); // Dapatkan header otorisasi
-
-      final response = await http.put( // Menggunakan PUT method
-        url,
-        headers: headers,
-        body: json.encode(bodyData),
-      );
-
-      final responseBody = json.decode(response.body);
-
-      if (response.statusCode == 200 && responseBody['status'] == 'success') {
-        return {'status': 'success', 'message': responseBody['message']};
-      } else {
-        return {'status': 'error', 'message': responseBody['message'] ?? 'Gagal memperbarui kos.'};
+      final currentUser = await _authService.getLoggedInUser();
+      if (currentUser == null) {
+        return {'status': 'error', 'message': 'Silakan login terlebih dahulu.'};
       }
+
+      final Map<String, dynamic> updateData = {
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+
+      if (namaKos != null) updateData['nama_kos'] = namaKos;
+      if (alamat != null) updateData['alamat'] = alamat;
+      if (deskripsi != null) updateData['deskripsi'] = deskripsi;
+      if (fasilitasUmum != null) updateData['fasilitas_umum'] = fasilitasUmum;
+
+      // Upload foto baru jika ada
+      if (fotoUtama != null && fotoUtama.isNotEmpty) {
+        final fotoUrl = await _uploadKosImageFromBase64(
+          userId: currentUser.id,
+          base64Image: fotoUtama,
+        );
+        if (fotoUrl != null) {
+          updateData['foto_utama_url'] = fotoUrl;
+        }
+      }
+
+      await SupabaseConfig.client
+          .from(SupabaseConfig.kosTable)
+          .update(updateData)
+          .eq('id', id)
+          .eq('user_id', currentUser.id);
+
+      return {
+        'status': 'success',
+        'message': 'Kos berhasil diperbarui.',
+      };
     } catch (e) {
-      print('Error during updateKos: $e');
-      return {'status': 'error', 'message': 'Gagal terhubung ke server. Silakan coba lagi.'};
+      return {
+        'status': 'error',
+        'message': 'Gagal memperbarui kos. Silakan coba lagi.',
+      };
     }
   }
 
-  // Method untuk MENGHAPUS KOS
-  // API PHP: api/kos/delete.php (menggunakan method DELETE)
+  /// Menghapus kos
   Future<Map<String, dynamic>> deleteKos(int kosId) async {
-    final url = Uri.parse("$_baseUrl/kos/delete.php"); // API delete kita menggunakan body, bukan ID di URL
-    
     try {
-      final headers = await _authService.getAuthHeaders(); // Dapatkan header otorisasi
-
-      final response = await http.delete( // Menggunakan DELETE method
-        url,
-        headers: headers,
-        body: json.encode({'id': kosId}), // Kirim ID di body
-      );
-
-      final responseBody = json.decode(response.body);
-
-      if (response.statusCode == 200 && responseBody['status'] == 'success') {
-        return {'status': 'success', 'message': responseBody['message']};
-      } else {
-        return {'status': 'error', 'message': responseBody['message'] ?? 'Gagal menghapus kos.'};
+      final currentUser = await _authService.getLoggedInUser();
+      if (currentUser == null) {
+        return {'status': 'error', 'message': 'Silakan login terlebih dahulu.'};
       }
+
+      await SupabaseConfig.client
+          .from(SupabaseConfig.kosTable)
+          .delete()
+          .eq('id', kosId)
+          .eq('user_id', currentUser.id);
+
+      return {
+        'status': 'success',
+        'message': 'Kos berhasil dihapus.',
+      };
     } catch (e) {
-      print('Error during deleteKos: $e');
-      return {'status': 'error', 'message': 'Gagal terhubung ke server. Silakan coba lagi.'};
+      return {
+        'status': 'error',
+        'message': 'Gagal menghapus kos. Silakan coba lagi.',
+      };
     }
   }
 
-// API PHP: api/kos/search.php
+  /// Mencari kos berdasarkan keyword dan filter
   Future<List<Kos>> searchKos({
     String? keyword,
     double? minPrice,
     double? maxPrice,
-    String? fasilitas, // Fasilitas kamar, dipisahkan koma (misal: "AC,KM Dalam")
   }) async {
-    // Bangun URL dengan query parameters
-    final Map<String, String> queryParams = {};
-    if (keyword != null && keyword.isNotEmpty) {
-      queryParams['keyword'] = keyword;
-    }
-    if (minPrice != null) {
-      queryParams['min_price'] = minPrice.toString();
-    }
-    if (maxPrice != null) {
-      queryParams['max_price'] = maxPrice.toString();
-    }
-    if (fasilitas != null && fasilitas.isNotEmpty) {
-      queryParams['fasilitas'] = fasilitas;
-    }
-
-    final uri = Uri.parse("$_baseUrl/kos/search.php").replace(queryParameters: queryParams);
-    
     try {
-      final headers = await _authService.getAuthHeaders(); // Dapatkan header otorisasi (diperlukan)
+      var query = SupabaseConfig.client
+          .from(SupabaseConfig.kosTable)
+          .select('*, users(username, nama_lengkap)');
 
-      final response = await http.get(
-        uri,
-        headers: headers,
-      );
-
-      final responseBody = json.decode(response.body);
-
-      if (response.statusCode == 200 && responseBody['status'] == 'success') {
-        final List<dynamic> kosData = responseBody['data'];
-        return kosData.map((json) => Kos.fromJson(json)).toList();
-      } else {
-        print('Error searching kos: ${responseBody['message']}');
-        return [];
+      // Filter berdasarkan keyword
+      if (keyword != null && keyword.isNotEmpty) {
+        query = query.or('nama_kos.ilike.%$keyword%,alamat.ilike.%$keyword%');
       }
+
+      final response = await query.order('created_at', ascending: false);
+
+      return (response as List).map((json) => Kos.fromJson(json)).toList();
     } catch (e) {
-      print('Error during searchKos: $e');
       return [];
     }
   }
-  // TODO: Tambahkan method untuk getKamarByKosId jika API-nya sudah ada (ini akan mengembalikan List<KamarKos>)
 }

@@ -1,12 +1,11 @@
 // lib/features/tenant_dashboard/screens/upload_payment_proof_screen.dart (DIUPDATE)
+import 'dart:typed_data'; // Untuk Uint8List
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sewa_kos/core/constants/app_constants.dart';
 import 'package:sewa_kos/core/models/pemesanan_model.dart';
 import 'package:sewa_kos/core/services/pembayaran_service.dart';
-import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'dart:typed_data'; // Untuk Uint8List
 
 class UploadPaymentProofScreen extends StatefulWidget {
   final Pemesanan pemesanan;
@@ -19,7 +18,8 @@ class UploadPaymentProofScreen extends StatefulWidget {
   });
 
   @override
-  State<UploadPaymentProofScreen> createState() => _UploadPaymentProofScreenState();
+  State<UploadPaymentProofScreen> createState() =>
+      _UploadPaymentProofScreenState();
 }
 
 class _UploadPaymentProofScreenState extends State<UploadPaymentProofScreen> {
@@ -36,7 +36,8 @@ class _UploadPaymentProofScreenState extends State<UploadPaymentProofScreen> {
   @override
   void initState() {
     super.initState();
-    _jumlahBayarController.text = widget.pemesanan.totalHarga.toStringAsFixed(0);
+    _jumlahBayarController.text =
+        widget.pemesanan.totalHarga.toStringAsFixed(0);
   }
 
   @override
@@ -61,17 +62,21 @@ class _UploadPaymentProofScreenState extends State<UploadPaymentProofScreen> {
   Future<void> _uploadProof() async {
     if (_pickedImageFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mohon pilih bukti pembayaran terlebih dahulu.')),
+        const SnackBar(
+            content: Text('Mohon pilih bukti pembayaran terlebih dahulu.')),
       );
       return;
     }
-    if (_jumlahBayarController.text.isEmpty || double.tryParse(_jumlahBayarController.text) == null) {
+    if (_jumlahBayarController.text.isEmpty ||
+        double.tryParse(_jumlahBayarController.text) == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mohon masukkan jumlah pembayaran yang valid.')),
+        const SnackBar(
+            content: Text('Mohon masukkan jumlah pembayaran yang valid.')),
       );
       return;
     }
-    if (_selectedMetodePembayaran == null || _selectedMetodePembayaran!.isEmpty) {
+    if (_selectedMetodePembayaran == null ||
+        _selectedMetodePembayaran!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Mohon pilih metode pembayaran.')),
       );
@@ -94,20 +99,28 @@ class _UploadPaymentProofScreenState extends State<UploadPaymentProofScreen> {
       if (mounted) {
         if (response['status'] == 'success') {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(response['message'] ?? 'Bukti pembayaran berhasil diunggah!'), backgroundColor: AppConstants.successColor),
+            SnackBar(
+                content: Text(response['message'] ??
+                    'Bukti pembayaran berhasil diunggah!'),
+                backgroundColor: AppConstants.successColor),
           );
           widget.onProofUploaded();
           Navigator.pop(context);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(response['message'] ?? 'Gagal mengunggah bukti pembayaran.'), backgroundColor: AppConstants.errorColor),
+            SnackBar(
+                content: Text(response['message'] ??
+                    'Gagal mengunggah bukti pembayaran.'),
+                backgroundColor: AppConstants.errorColor),
           );
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: AppConstants.errorColor),
+          SnackBar(
+              content: Text('Error: ${e.toString()}'),
+              backgroundColor: AppConstants.errorColor),
         );
       }
     } finally {
@@ -136,15 +149,16 @@ class _UploadPaymentProofScreenState extends State<UploadPaymentProofScreen> {
                 children: [
                   Text(
                     'Pemesanan untuk: ${widget.pemesanan.namaKamar ?? ''} di ${widget.pemesanan.namaKos ?? ''}',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Total yang harus dibayar: Rp ${widget.pemesanan.totalHarga.toStringAsFixed(0)}',
-                    style: const TextStyle(fontSize: 16, color: AppConstants.textColorPrimary),
+                    style: const TextStyle(
+                        fontSize: 16, color: AppConstants.textColorPrimary),
                   ),
                   const SizedBox(height: AppConstants.defaultPadding),
-
                   TextFormField(
                     controller: _jumlahBayarController,
                     keyboardType: TextInputType.number,
@@ -156,7 +170,6 @@ class _UploadPaymentProofScreenState extends State<UploadPaymentProofScreen> {
                     ),
                   ),
                   const SizedBox(height: AppConstants.defaultPadding),
-
                   DropdownButtonFormField<String>(
                     value: _selectedMetodePembayaran,
                     decoration: const InputDecoration(
@@ -178,7 +191,6 @@ class _UploadPaymentProofScreenState extends State<UploadPaymentProofScreen> {
                     },
                   ),
                   const SizedBox(height: AppConstants.defaultPadding),
-
                   const Text(
                     'Bukti Pembayaran:',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -191,13 +203,15 @@ class _UploadPaymentProofScreenState extends State<UploadPaymentProofScreen> {
                             height: 200,
                             decoration: BoxDecoration(
                               color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+                              borderRadius: BorderRadius.circular(
+                                  AppConstants.defaultBorderRadius),
                               border: Border.all(color: Colors.grey),
                             ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.image, size: 50, color: Colors.grey[600]),
+                                Icon(Icons.image,
+                                    size: 50, color: Colors.grey[600]),
                                 const SizedBox(height: 8),
                                 Text(
                                   'Belum ada gambar dipilih',
@@ -226,7 +240,6 @@ class _UploadPaymentProofScreenState extends State<UploadPaymentProofScreen> {
                     ),
                   ),
                   const SizedBox(height: AppConstants.defaultPadding * 2),
-
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
@@ -240,7 +253,8 @@ class _UploadPaymentProofScreenState extends State<UploadPaymentProofScreen> {
                         backgroundColor: AppConstants.primaryColor,
                         padding: const EdgeInsets.symmetric(vertical: 15),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+                          borderRadius: BorderRadius.circular(
+                              AppConstants.defaultBorderRadius),
                         ),
                       ),
                     ),

@@ -19,9 +19,10 @@ class _AddEditKamarScreenState extends State<AddEditKamarScreen> {
   final TextEditingController _namaKamarController = TextEditingController();
   final TextEditingController _hargaSewaController = TextEditingController();
   final TextEditingController _luasKamarController = TextEditingController();
-  final TextEditingController _fasilitasController = TextEditingController(); // Fasilitas string (misal: "AC, KM Dalam")
+  final TextEditingController _fasilitasController =
+      TextEditingController(); // Fasilitas string (misal: "AC, KM Dalam")
 
-  String? _selectedStatus; // 'tersedia', 'terisi', 'perbaikan'
+  StatusKamar? _selectedStatus; // Menggunakan enum StatusKamar
 
   bool _isLoading = false;
 
@@ -31,12 +32,13 @@ class _AddEditKamarScreenState extends State<AddEditKamarScreen> {
     if (widget.kamar != null) {
       // Jika mode edit, isi controller dengan data kamar yang ada
       _namaKamarController.text = widget.kamar!.namaKamar;
-      _hargaSewaController.text = widget.kamar!.hargaSewa.toStringAsFixed(0); // Format harga tanpa desimal
+      _hargaSewaController.text = widget.kamar!.hargaSewa
+          .toStringAsFixed(0); // Format harga tanpa desimal
       _luasKamarController.text = widget.kamar!.luasKamar ?? '';
       _fasilitasController.text = widget.kamar!.fasilitas ?? '';
       _selectedStatus = widget.kamar!.status;
     } else {
-      _selectedStatus = 'tersedia'; // Default untuk kamar baru
+      _selectedStatus = StatusKamar.tersedia; // Default untuk kamar baru
     }
   }
 
@@ -61,14 +63,18 @@ class _AddEditKamarScreenState extends State<AddEditKamarScreen> {
     final kamarService = KamarService();
     dynamic response;
 
-    final String? fasilitasText = _fasilitasController.text.trim().isNotEmpty ? _fasilitasController.text.trim() : null;
+    final String? fasilitasText = _fasilitasController.text.trim().isNotEmpty
+        ? _fasilitasController.text.trim()
+        : null;
     final double? hargaSewaParsed = double.tryParse(_hargaSewaController.text);
 
     if (hargaSewaParsed == null) {
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Harga sewa tidak valid.'), backgroundColor: AppConstants.errorColor),
+          const SnackBar(
+              content: Text('Harga sewa tidak valid.'),
+              backgroundColor: AppConstants.errorColor),
         );
       }
       return;
@@ -81,7 +87,9 @@ class _AddEditKamarScreenState extends State<AddEditKamarScreen> {
           kosId: widget.kosId,
           namaKamar: _namaKamarController.text,
           hargaSewa: hargaSewaParsed,
-          luasKamar: _luasKamarController.text.isNotEmpty ? _luasKamarController.text : null,
+          luasKamar: _luasKamarController.text.isNotEmpty
+              ? _luasKamarController.text
+              : null,
           fasilitas: fasilitasText,
         );
       } else {
@@ -90,7 +98,9 @@ class _AddEditKamarScreenState extends State<AddEditKamarScreen> {
           kamarId: widget.kamar!.id,
           namaKamar: _namaKamarController.text,
           hargaSewa: hargaSewaParsed,
-          luasKamar: _luasKamarController.text.isNotEmpty ? _luasKamarController.text : null,
+          luasKamar: _luasKamarController.text.isNotEmpty
+              ? _luasKamarController.text
+              : null,
           fasilitas: fasilitasText,
           status: _selectedStatus, // Update status juga
         );
@@ -104,7 +114,8 @@ class _AddEditKamarScreenState extends State<AddEditKamarScreen> {
               backgroundColor: AppConstants.successColor,
             ),
           );
-          Navigator.pop(context, true); // Beri tahu KamarManagementScreen untuk refresh
+          Navigator.pop(
+              context, true); // Beri tahu KamarManagementScreen untuk refresh
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -117,7 +128,9 @@ class _AddEditKamarScreenState extends State<AddEditKamarScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: AppConstants.errorColor),
+          SnackBar(
+              content: Text('Error: ${e.toString()}'),
+              backgroundColor: AppConstants.errorColor),
         );
       }
     } finally {
@@ -171,7 +184,8 @@ class _AddEditKamarScreenState extends State<AddEditKamarScreen> {
                         if (value == null || value.isEmpty) {
                           return 'Harga Sewa tidak boleh kosong';
                         }
-                        if (double.tryParse(value) == null || double.parse(value) <= 0) {
+                        if (double.tryParse(value) == null ||
+                            double.parse(value) <= 0) {
                           return 'Masukkan harga yang valid';
                         }
                         return null;
@@ -189,7 +203,8 @@ class _AddEditKamarScreenState extends State<AddEditKamarScreen> {
                     TextFormField(
                       controller: _fasilitasController,
                       decoration: const InputDecoration(
-                        labelText: 'Fasilitas Kamar (Pisahkan dengan koma, Opsional)',
+                        labelText:
+                            'Fasilitas Kamar (Pisahkan dengan koma, Opsional)',
                         hintText: 'Misal: AC, Kamar Mandi Dalam, Kasur',
                         border: OutlineInputBorder(),
                       ),
@@ -198,44 +213,51 @@ class _AddEditKamarScreenState extends State<AddEditKamarScreen> {
                     const SizedBox(height: 16),
                     // Dropdown untuk Status Kamar hanya muncul di mode EDIT
                     if (widget.kamar != null) // Hanya tampilkan jika mode edit
-                      DropdownButtonFormField<String>(
+                      DropdownButtonFormField<StatusKamar>(
                         value: _selectedStatus,
                         decoration: const InputDecoration(
                           labelText: 'Status Kamar',
                           border: OutlineInputBorder(),
                         ),
-                        items: const [
-                          DropdownMenuItem(value: 'tersedia', child: Text('Tersedia')),
-                          DropdownMenuItem(value: 'terisi', child: Text('Terisi')),
-                          DropdownMenuItem(value: 'perbaikan', child: Text('Perbaikan')),
-                        ],
+                        items: StatusKamar.values.map((status) {
+                          return DropdownMenuItem(
+                            value: status,
+                            child: Text(status.displayName),
+                          );
+                        }).toList(),
                         onChanged: (value) {
                           setState(() {
                             _selectedStatus = value!;
                           });
                         },
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
+                          if (value == null) {
                             return 'Status kamar wajib dipilih';
                           }
                           return null;
                         },
                       ),
-                    if (widget.kamar != null) const SizedBox(height: 32), // Spasi tambahan jika dropdown muncul
-                    
+                    if (widget.kamar != null)
+                      const SizedBox(
+                          height: 32), // Spasi tambahan jika dropdown muncul
+
                     ElevatedButton(
                       onPressed: _isLoading ? null : _saveKamar,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppConstants.primaryColor,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+                          borderRadius: BorderRadius.circular(
+                              AppConstants.defaultBorderRadius),
                         ),
                         elevation: 5,
                       ),
                       child: Text(
-                        widget.kamar == null ? 'Tambah Kamar' : 'Simpan Perubahan',
-                        style: const TextStyle(fontSize: 18, color: Colors.white),
+                        widget.kamar == null
+                            ? 'Tambah Kamar'
+                            : 'Simpan Perubahan',
+                        style:
+                            const TextStyle(fontSize: 18, color: Colors.white),
                       ),
                     ),
                   ],

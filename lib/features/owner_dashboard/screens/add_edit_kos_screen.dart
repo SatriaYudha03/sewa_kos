@@ -23,7 +23,8 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
   final TextEditingController _namaKosController = TextEditingController();
   final TextEditingController _alamatController = TextEditingController();
   final TextEditingController _deskripsiController = TextEditingController();
-  final TextEditingController _fasilitasUmumController = TextEditingController();
+  final TextEditingController _fasilitasUmumController =
+      TextEditingController();
 
   PlatformFile? _imageFile;
   Uint8List? _webImage; // Untuk pratinjau gambar di web
@@ -36,10 +37,9 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
     super.initState();
     if (widget.kos != null) {
       _namaKosController.text = widget.kos!.namaKos;
-      _alamatController.text = widget.kos!.alamat;
+      _alamatController.text = widget.kos!.alamat ?? '';
       _deskripsiController.text = widget.kos!.deskripsi ?? '';
       _fasilitasUmumController.text = widget.kos!.fasilitasUmum ?? '';
-      // Hapus baris _currentFotoUtamaId = widget.kos!.fotoUtamaId;
     }
   }
 
@@ -54,12 +54,13 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
       if (result != null && result.files.isNotEmpty) {
         final file = result.files.first;
         if (file.bytes == null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Gagal membaca data gambar.')),
-            );
-            return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Gagal membaca data gambar.')),
+          );
+          return;
         }
-        if (file.size > 2 * 1024 * 1024) { // 2MB
+        if (file.size > 2 * 1024 * 1024) {
+          // 2MB
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Ukuran gambar maksimal 2MB')),
           );
@@ -91,7 +92,7 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
     String? fotoUtamaBase64;
     if (_imageFile != null && _imageFile!.bytes != null) {
       fotoUtamaBase64 = base64Encode(_imageFile!.bytes!);
-    } 
+    }
     // Jika _imageFile null, artinya user tidak memilih gambar baru.
     // Jika ini mode edit dan _imageFile null, kita tidak akan mengubah gambar.
     // PHP API kita (update.php) sudah dirancang untuk mempertahankan BLOB yang ada
@@ -108,9 +109,13 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
         response = await kosService.addKos(
           namaKos: _namaKosController.text,
           alamat: _alamatController.text,
-          deskripsi: _deskripsiController.text.isNotEmpty ? _deskripsiController.text : null,
+          deskripsi: _deskripsiController.text.isNotEmpty
+              ? _deskripsiController.text
+              : null,
           fotoUtama: fotoUtamaBase64,
-          fasilitasUmum: _fasilitasUmumController.text.isNotEmpty ? _fasilitasUmumController.text : null,
+          fasilitasUmum: _fasilitasUmumController.text.isNotEmpty
+              ? _fasilitasUmumController.text
+              : null,
         );
       } else {
         // Mode Edit Kos
@@ -118,9 +123,13 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
           id: widget.kos!.id,
           namaKos: _namaKosController.text,
           alamat: _alamatController.text,
-          deskripsi: _deskripsiController.text.isNotEmpty ? _deskripsiController.text : null,
+          deskripsi: _deskripsiController.text.isNotEmpty
+              ? _deskripsiController.text
+              : null,
           fotoUtama: fotoUtamaBase64, // Hanya kirim jika ada gambar baru
-          fasilitasUmum: _fasilitasUmumController.text.isNotEmpty ? _fasilitasUmumController.text : null,
+          fasilitasUmum: _fasilitasUmumController.text.isNotEmpty
+              ? _fasilitasUmumController.text
+              : null,
         );
       }
 
@@ -145,7 +154,9 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: AppConstants.errorColor),
+          SnackBar(
+              content: Text('Error: ${e.toString()}'),
+              backgroundColor: AppConstants.errorColor),
         );
       }
     } finally {
@@ -223,33 +234,47 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    Center( // Tambahkan Center untuk tampilan gambar
-                      child: _imageFile != null // Jika ada gambar baru dipilih (dari FilePicker)
+                    Center(
+                      // Tambahkan Center untuk tampilan gambar
+                      child: _imageFile !=
+                              null // Jika ada gambar baru dipilih (dari FilePicker)
                           ? kIsWeb // Cek apakah di web
-                              ? Image.memory(_webImage!, height: 150, fit: BoxFit.cover) // Tampilan untuk web
-                              : Image.file(File(_imageFile!.path!), height: 150, fit: BoxFit.cover) // Tampilan untuk mobile
-                          : widget.kos != null && widget.kos!.hasImage // Jika tidak ada gambar baru, tapi ada gambar lama
+                              ? Image.memory(_webImage!,
+                                  height: 150,
+                                  fit: BoxFit.cover) // Tampilan untuk web
+                              : Image.file(File(_imageFile!.path!),
+                                  height: 150,
+                                  fit: BoxFit.cover) // Tampilan untuk mobile
+                          : widget.kos != null &&
+                                  widget.kos!
+                                      .hasImage // Jika tidak ada gambar baru, tapi ada gambar lama
                               ? Image.network(
-                                  '${AppConstants.baseUrl}/images/serve.php?type=kos&id=${widget.kos!.id}', // Panggil serve.php dengan ID Kos
+                                  widget.kos!
+                                      .fotoUtamaUrl!, // Gunakan URL dari Supabase Storage
                                   height: 150,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => Container(
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      Container(
                                     height: 150,
                                     color: Colors.grey[200],
-                                    child: const Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                                    child: const Icon(Icons.broken_image,
+                                        size: 50, color: Colors.grey),
                                   ),
                                 )
-                              : Container( // Jika tidak ada gambar sama sekali (baru atau lama)
+                              : Container(
+                                  // Jika tidak ada gambar sama sekali (baru atau lama)
                                   height: 150,
                                   color: Colors.grey[200],
-                                  child: const Icon(Icons.image, size: 50, color: Colors.grey),
+                                  child: const Icon(Icons.image,
+                                      size: 50, color: Colors.grey),
                                 ),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _fasilitasUmumController,
                       decoration: const InputDecoration(
-                        labelText: 'Fasilitas Umum (Pisahkan dengan koma, Opsional)',
+                        labelText:
+                            'Fasilitas Umum (Pisahkan dengan koma, Opsional)',
                         hintText: 'Misal: WiFi, Dapur Bersama, Parkir Motor',
                         border: OutlineInputBorder(),
                       ),
@@ -262,13 +287,15 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
                         backgroundColor: AppConstants.primaryColor,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+                          borderRadius: BorderRadius.circular(
+                              AppConstants.defaultBorderRadius),
                         ),
                         elevation: 5,
                       ),
                       child: Text(
                         widget.kos == null ? 'Tambah Kos' : 'Simpan Perubahan',
-                        style: const TextStyle(fontSize: 18, color: Colors.white),
+                        style:
+                            const TextStyle(fontSize: 18, color: Colors.white),
                       ),
                     ),
                   ],

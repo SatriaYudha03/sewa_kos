@@ -1,5 +1,6 @@
-// lib/app_constants.dart
-class AppConstants {
-  static const String baseUrl = 'http://192.168.93.27/sewa_kos_api'; 
-  // PASTIKAN IP INI SESUAI DENGAN IP KOMPUTER ANDA DAN PATH FOLDER API YANG BENAR
-}
+/// File ini deprecated - gunakan core/constants/app_constants.dart
+///
+/// Re-export untuk backward compatibility
+library;
+
+export 'core/constants/app_constants.dart';

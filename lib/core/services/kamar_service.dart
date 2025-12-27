@@ -1,176 +1,236 @@
-// lib/core/services/kamar_service.dart
-import 'package:http/http.dart' as http;
+/// KamarService - Layanan untuk mengelola data kamar kos menggunakan Supabase
+///
+/// Mengelola CRUD untuk kamar dalam setiap kos
+
 import 'dart:convert';
-import '../../app_constants.dart'; // Import AppConstants
-import '../models/kamar_kos_model.dart'; // Import KamarKosModel
-import 'auth_service.dart'; // Import AuthService untuk mendapatkan header otorisasi
+import 'dart:typed_data';
+
+import '../config/supabase_config.dart';
+import '../models/kamar_kos_model.dart';
+import 'auth_service.dart';
 
 class KamarService {
-  final String _baseUrl = AppConstants.baseUrl;
-  final AuthService _authService = AuthService(); // Inisialisasi AuthService
+  final AuthService _authService = AuthService();
 
-  // Method untuk MENAMBAH KAMAR BARU ke dalam suatu Kos
-  // API PHP: api/kamar/add.php
+  /// Menambah kamar baru ke kos
+  /// [fotoKamar] - base64 encoded string of image (optional)
   Future<Map<String, dynamic>> addKamar({
     required int kosId,
     required String namaKamar,
     required double hargaSewa,
     String? luasKamar,
-    String? fasilitas, // Contoh: "AC, Kamar Mandi Dalam"
+    String? fasilitas,
+    String? fotoKamar, // base64 string
   }) async {
-    final url = Uri.parse("$_baseUrl/kamar/add.php");
-    
     try {
-      final headers = await _authService.getAuthHeaders(); // Dapatkan header otorisasi
-
-      final response = await http.post(
-        url,
-        headers: headers, // Gunakan header otorisasi
-        body: json.encode({
-          'kos_id': kosId,
-          'nama_kamar': namaKamar,
-          'harga_sewa': hargaSewa, // Kirim sebagai double, PHP akan parse
-          'luas_kamar': luasKamar,
-          'fasilitas': fasilitas,
-        }),
-      );
-
-      final responseBody = json.decode(response.body);
-
-      if (response.statusCode == 201 && responseBody['status'] == 'success') {
-        return {'status': 'success', 'message': responseBody['message'], 'data': responseBody['data']};
-      } else {
-        return {'status': 'error', 'message': responseBody['message'] ?? 'Failed to add room.'};
+      final currentUser = await _authService.getLoggedInUser();
+      if (currentUser == null) {
+        return {'status': 'error', 'message': 'Silakan login terlebih dahulu.'};
       }
+
+      String? fotoKamarUrl;
+
+      // Upload foto jika ada
+      if (fotoKamar != null && fotoKamar.isNotEmpty) {
+        fotoKamarUrl = await _uploadKamarImageFromBase64(
+          kosId: kosId,
+          base64Image: fotoKamar,
+        );
+      }
+
+      // Insert data kamar
+      final response = await SupabaseConfig.client
+          .from(SupabaseConfig.kamarKosTable)
+          .insert({
+            'kos_id': kosId,
+            'nama_kamar': namaKamar,
+            'harga_sewa': hargaSewa,
+            'luas_kamar': luasKamar,
+            'fasilitas': fasilitas,
+            'status': StatusKamar.tersedia.toDbString(),
+            'foto_kamar_url': fotoKamarUrl,
+          })
+          .select()
+          .single();
+
+      return {
+        'status': 'success',
+        'message': 'Kamar berhasil ditambahkan.',
+        'data': KamarKos.fromJson(response),
+      };
     } catch (e) {
-      print('Error during addKamar: $e');
-      return {'status': 'error', 'message': 'Failed to connect to server. Please try again later.'};
+      return {
+        'status': 'error',
+        'message': 'Gagal menambahkan kamar. Silakan coba lagi.',
+      };
     }
   }
 
-  // Method untuk MENGAMBIL DAFTAR KAMAR untuk Kos tertentu
-  // API PHP: api/kamar/list_by_kos.php?kos_id={kos_id}
-  Future<List<KamarKos>> getKamarByKosId(int kosId) async {
-    final url = Uri.parse("$_baseUrl/kamar/list_by_kos.php?kos_id=$kosId");
-    
+  /// Upload gambar kamar ke Supabase Storage dari base64 string
+  Future<String?> _uploadKamarImageFromBase64({
+    required int kosId,
+    required String base64Image,
+  }) async {
     try {
-      final headers = await _authService.getAuthHeaders(); // Dapatkan header otorisasi
+      final fileName =
+          'kamar_${kosId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
 
-      final response = await http.get(
-        url,
-        headers: headers, // Kirim header otorisasi
-      );
+      final Uint8List fileBytes = base64Decode(base64Image);
 
-      final responseBody = json.decode(response.body);
+      await SupabaseConfig.client.storage
+          .from(SupabaseConfig.kamarImagesBucket)
+          .uploadBinary(fileName, fileBytes);
 
-      if (response.statusCode == 200 && responseBody['status'] == 'success') {
-        final List<dynamic> kamarData = responseBody['data'];
-        return kamarData.map((json) => KamarKos.fromJson(json)).toList();
-      } else {
-        print('Error fetching kamar list: ${responseBody['message']}');
-        return [];
-      }
+      return SupabaseConfig.client.storage
+          .from(SupabaseConfig.kamarImagesBucket)
+          .getPublicUrl(fileName);
     } catch (e) {
-      print('Error during getKamarByKosId: $e');
-      return [];
-    }
-  }
-
-  // Method untuk MENGAMBIL DETAIL KAMAR berdasarkan ID Kamar
-  // API PHP: api/kamar/detail.php?id={id_kamar}
-  Future<KamarKos?> getKamarDetail(int kamarId) async {
-    final url = Uri.parse("$_baseUrl/kamar/detail.php?id=$kamarId");
-    
-    try {
-      final headers = await _authService.getAuthHeaders(); // Dapatkan header otorisasi
-
-      final response = await http.get(
-        url,
-        headers: headers, // Kirim header otorisasi
-      );
-
-      final responseBody = json.decode(response.body);
-
-      if (response.statusCode == 200 && responseBody['status'] == 'success') {
-        return KamarKos.fromJson(responseBody['data']);
-      } else {
-        print('Error fetching kamar detail: ${responseBody['message']}');
-        return null;
-      }
-    } catch (e) {
-      print('Error during getKamarDetail: $e');
       return null;
     }
   }
 
-  // Method untuk MEMPERBARUI DATA KAMAR
-  // API PHP: api/kamar/update.php
+  /// Mengambil daftar kamar berdasarkan kos ID
+  Future<List<KamarKos>> getKamarByKosId(int kosId) async {
+    try {
+      final response = await SupabaseConfig.client
+          .from(SupabaseConfig.kamarKosTable)
+          .select('*, kos(nama_kos, alamat)')
+          .eq('kos_id', kosId)
+          .order('nama_kamar', ascending: true);
+
+      return (response as List).map((json) => KamarKos.fromJson(json)).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Mengambil detail kamar berdasarkan ID
+  Future<KamarKos?> getKamarDetail(int kamarId) async {
+    try {
+      final response = await SupabaseConfig.client
+          .from(SupabaseConfig.kamarKosTable)
+          .select('*, kos(nama_kos, alamat)')
+          .eq('id', kamarId)
+          .single();
+
+      return KamarKos.fromJson(response);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Memperbarui data kamar
+  /// [status] - StatusKamar enum (tersedia, terisi, perbaikan)
+  /// [fotoKamar] - base64 encoded string of new image (optional)
   Future<Map<String, dynamic>> updateKamar({
     required int kamarId,
     String? namaKamar,
     double? hargaSewa,
     String? luasKamar,
     String? fasilitas,
-    String? status, // Misal: 'tersedia', 'terisi', 'perbaikan'
+    StatusKamar? status,
+    String? fotoKamar, // base64 string
   }) async {
-    final url = Uri.parse("$_baseUrl/kamar/update.php");
-    
-    // Siapkan body secara dinamis agar hanya mengirim field yang tidak null
-    final Map<String, dynamic> bodyData = {
-      'id': kamarId, // ID kamar wajib
-    };
-    if (namaKamar != null) bodyData['nama_kamar'] = namaKamar;
-    if (hargaSewa != null) bodyData['harga_sewa'] = hargaSewa;
-    if (luasKamar != null) bodyData['luas_kamar'] = luasKamar;
-    if (fasilitas != null) bodyData['fasilitas'] = fasilitas;
-    if (status != null) bodyData['status'] = status;
-
     try {
-      final headers = await _authService.getAuthHeaders(); // Dapatkan header otorisasi
-
-      final response = await http.put( // Menggunakan PUT method
-        url,
-        headers: headers,
-        body: json.encode(bodyData),
-      );
-
-      final responseBody = json.decode(response.body);
-
-      if (response.statusCode == 200 && responseBody['status'] == 'success') {
-        return {'status': 'success', 'message': responseBody['message']};
-      } else {
-        return {'status': 'error', 'message': responseBody['message'] ?? 'Failed to update room.'};
+      final currentUser = await _authService.getLoggedInUser();
+      if (currentUser == null) {
+        return {'status': 'error', 'message': 'Silakan login terlebih dahulu.'};
       }
+
+      // Dapatkan kos_id untuk keperluan upload
+      final existingKamar = await getKamarDetail(kamarId);
+      if (existingKamar == null) {
+        return {'status': 'error', 'message': 'Kamar tidak ditemukan.'};
+      }
+
+      final Map<String, dynamic> updateData = {
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+
+      if (namaKamar != null) updateData['nama_kamar'] = namaKamar;
+      if (hargaSewa != null) updateData['harga_sewa'] = hargaSewa;
+      if (luasKamar != null) updateData['luas_kamar'] = luasKamar;
+      if (fasilitas != null) updateData['fasilitas'] = fasilitas;
+      if (status != null) updateData['status'] = status.toDbString();
+
+      // Upload foto baru jika ada
+      if (fotoKamar != null && fotoKamar.isNotEmpty) {
+        final fotoUrl = await _uploadKamarImageFromBase64(
+          kosId: existingKamar.kosId,
+          base64Image: fotoKamar,
+        );
+        if (fotoUrl != null) {
+          updateData['foto_kamar_url'] = fotoUrl;
+        }
+      }
+
+      await SupabaseConfig.client
+          .from(SupabaseConfig.kamarKosTable)
+          .update(updateData)
+          .eq('id', kamarId);
+
+      return {
+        'status': 'success',
+        'message': 'Kamar berhasil diperbarui.',
+      };
     } catch (e) {
-      print('Error during updateKamar: $e');
-      return {'status': 'error', 'message': 'Failed to connect to server. Please try again later.'};
+      return {
+        'status': 'error',
+        'message': 'Gagal memperbarui kamar. Silakan coba lagi.',
+      };
     }
   }
 
-  // Method untuk MENGHAPUS KAMAR
-  // API PHP: api/kamar/delete.php
+  /// Menghapus kamar
   Future<Map<String, dynamic>> deleteKamar(int kamarId) async {
-    final url = Uri.parse("$_baseUrl/kamar/delete.php");
-    
     try {
-      final headers = await _authService.getAuthHeaders(); // Dapatkan header otorisasi
-
-      final response = await http.delete( // Menggunakan DELETE method
-        url,
-        headers: headers,
-        body: json.encode({'id': kamarId}), // Kirim ID di body untuk DELETE
-      );
-
-      final responseBody = json.decode(response.body);
-
-      if (response.statusCode == 200 && responseBody['status'] == 'success') {
-        return {'status': 'success', 'message': responseBody['message']};
-      } else {
-        return {'status': 'error', 'message': responseBody['message'] ?? 'Failed to delete room.'};
+      final currentUser = await _authService.getLoggedInUser();
+      if (currentUser == null) {
+        return {'status': 'error', 'message': 'Silakan login terlebih dahulu.'};
       }
+
+      await SupabaseConfig.client
+          .from(SupabaseConfig.kamarKosTable)
+          .delete()
+          .eq('id', kamarId);
+
+      return {
+        'status': 'success',
+        'message': 'Kamar berhasil dihapus.',
+      };
     } catch (e) {
-      print('Error during deleteKamar: $e');
-      return {'status': 'error', 'message': 'Failed to connect to server. Please try again later.'};
+      return {
+        'status': 'error',
+        'message': 'Gagal menghapus kamar. Silakan coba lagi.',
+      };
+    }
+  }
+
+  /// Mengambil kamar yang tersedia di semua kos (untuk penyewa mencari kamar)
+  Future<List<KamarKos>> getAvailableKamar({
+    String? keyword,
+    double? minPrice,
+    double? maxPrice,
+  }) async {
+    try {
+      var query = SupabaseConfig.client
+          .from(SupabaseConfig.kamarKosTable)
+          .select('*, kos(nama_kos, alamat, users(username, nama_lengkap))')
+          .eq('status', StatusKamar.tersedia.toDbString());
+
+      // Filter harga
+      if (minPrice != null) {
+        query = query.gte('harga_sewa', minPrice);
+      }
+      if (maxPrice != null) {
+        query = query.lte('harga_sewa', maxPrice);
+      }
+
+      final response = await query.order('harga_sewa', ascending: true);
+
+      return (response as List).map((json) => KamarKos.fromJson(json)).toList();
+    } catch (e) {
+      return [];
     }
   }
 }

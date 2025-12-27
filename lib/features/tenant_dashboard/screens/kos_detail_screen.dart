@@ -78,19 +78,27 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
       if (mounted) {
         if (response['status'] == 'success') {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(response['message'] ?? 'Pemesanan berhasil dibuat!'), backgroundColor: AppConstants.successColor),
+            SnackBar(
+                content:
+                    Text(response['message'] ?? 'Pemesanan berhasil dibuat!'),
+                backgroundColor: AppConstants.successColor),
           );
           Navigator.pop(context);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(response['message'] ?? 'Gagal membuat pemesanan.'), backgroundColor: AppConstants.errorColor),
+            SnackBar(
+                content:
+                    Text(response['message'] ?? 'Gagal membuat pemesanan.'),
+                backgroundColor: AppConstants.errorColor),
           );
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: AppConstants.errorColor),
+          SnackBar(
+              content: Text('Error: ${e.toString()}'),
+              backgroundColor: AppConstants.errorColor),
         );
       }
     } finally {
@@ -118,19 +126,25 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
               height: 200,
               width: double.infinity,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+                borderRadius:
+                    BorderRadius.circular(AppConstants.defaultBorderRadius),
                 image: DecorationImage(
-                  image: (widget.kos.hasImage)
-                      ? NetworkImage('${AppConstants.baseUrl}/images/serve.php?type=kos&id=${widget.kos.id}')
-                      : const AssetImage(AppConstants.imageAssetPlaceholderKos) as ImageProvider,
+                  image: (widget.kos.hasImage &&
+                          widget.kos.fotoUtamaUrl != null)
+                      ? NetworkImage(widget.kos.fotoUtamaUrl!)
+                      : const AssetImage(AppConstants.imageAssetPlaceholderKos)
+                          as ImageProvider,
                   fit: BoxFit.cover,
                   onError: (exception, stackTrace) {
-                    print('ERROR_DETAIL_IMAGE_LOAD: Gagal memuat gambar ${widget.kos.namaKos}: $exception');
+                    debugPrint(
+                        'ERROR_DETAIL_IMAGE_LOAD: Gagal memuat gambar ${widget.kos.namaKos}: $exception');
                   },
                 ),
               ),
               child: (!widget.kos.hasImage)
-                  ? Icon(Icons.apartment, size: 80, color: AppConstants.primaryColor.withOpacity(0.7))
+                  ? Icon(Icons.apartment,
+                      size: 80,
+                      color: AppConstants.primaryColor.withOpacity(0.7))
                   : null,
             ),
             const SizedBox(height: AppConstants.defaultPadding),
@@ -143,12 +157,14 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(Icons.location_on, size: 18, color: AppConstants.textColorSecondary),
+                const Icon(Icons.location_on,
+                    size: 18, color: AppConstants.textColorSecondary),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    widget.kos.alamat,
-                    style: const TextStyle(fontSize: 16, color: AppConstants.textColorSecondary),
+                    widget.kos.alamat ?? '',
+                    style: const TextStyle(
+                        fontSize: 16, color: AppConstants.textColorSecondary),
                   ),
                 ),
               ],
@@ -156,12 +172,16 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
             const SizedBox(height: 8),
             Text(
               'Oleh: ${widget.kos.ownerName ?? widget.kos.ownerUsername}',
-              style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: AppConstants.textColorSecondary),
+              style: const TextStyle(
+                  fontSize: 14,
+                  fontStyle: FontStyle.italic,
+                  color: AppConstants.textColorSecondary),
             ),
             const SizedBox(height: AppConstants.defaultPadding),
 
             // Deskripsi Kos
-            if (widget.kos.deskripsi != null && widget.kos.deskripsi!.isNotEmpty) ...[
+            if (widget.kos.deskripsi != null &&
+                widget.kos.deskripsi!.isNotEmpty) ...[
               const Text(
                 'Deskripsi:',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -175,7 +195,8 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
             ],
 
             // Fasilitas Umum
-            if (widget.kos.fasilitasUmum != null && widget.kos.fasilitasUmum!.isNotEmpty) ...[
+            if (widget.kos.fasilitasUmum != null &&
+                widget.kos.fasilitasUmum!.isNotEmpty) ...[
               const Text(
                 'Fasilitas Umum:',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -204,7 +225,8 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                   return const Center(child: CircularProgressIndicator());
                 } else if (snapshot.hasError) {
                   return Center(
-                    child: Text('Error memuat kamar: ${snapshot.error}', style: const TextStyle(color: Colors.red)),
+                    child: Text('Error memuat kamar: ${snapshot.error}',
+                        style: const TextStyle(color: Colors.red)),
                   );
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Center(
@@ -216,21 +238,28 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                       return Card(
                         margin: const EdgeInsets.symmetric(vertical: 8),
                         elevation: 2,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius / 2)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                                AppConstants.defaultBorderRadius / 2)),
                         child: Padding(
-                          padding: const EdgeInsets.all(AppConstants.defaultPadding),
+                          padding:
+                              const EdgeInsets.all(AppConstants.defaultPadding),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 kamar.namaKamar,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 16),
                               ),
                               const SizedBox(height: 4),
-                              Text('Harga: Rp ${kamar.hargaSewa.toStringAsFixed(0)} / bulan'),
-                              if (kamar.luasKamar != null && kamar.luasKamar!.isNotEmpty)
+                              Text(
+                                  'Harga: Rp ${kamar.hargaSewa.toStringAsFixed(0)} / bulan'),
+                              if (kamar.luasKamar != null &&
+                                  kamar.luasKamar!.isNotEmpty)
                                 Text('Ukuran: ${kamar.luasKamar}'),
-                              if (kamar.fasilitas != null && kamar.fasilitas!.isNotEmpty)
+                              if (kamar.fasilitas != null &&
+                                  kamar.fasilitas!.isNotEmpty)
                                 Text('Fasilitas: ${kamar.fasilitas}'),
                               const SizedBox(height: 8),
                               ElevatedButton.icon(
@@ -276,7 +305,8 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('Harga: Rp ${_selectedKamar!.hargaSewa.toStringAsFixed(0)} / bulan'),
+                    Text(
+                        'Harga: Rp ${_selectedKamar!.hargaSewa.toStringAsFixed(0)} / bulan'),
                     const SizedBox(height: 16),
                     ListTile(
                       title: Text(_selectedTanggalMulai == null
@@ -296,7 +326,8 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                         DropdownButton<int>(
                           value: _durasiSewa,
                           items: List.generate(12, (index) => index + 1)
-                              .map((e) => DropdownMenuItem(value: e, child: Text('$e bulan')))
+                              .map((e) => DropdownMenuItem(
+                                  value: e, child: Text('$e bulan')))
                               .toList(),
                           onChanged: (value) {
                             setStateInDialog(() {
@@ -309,7 +340,8 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                     const SizedBox(height: 16),
                     Text(
                       'Total Estimasi: Rp ${(_selectedKamar!.hargaSewa * _durasiSewa).toStringAsFixed(0)}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                   ],
                 ),
@@ -320,7 +352,8 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                   child: const Text('Batal'),
                 ),
                 ElevatedButton(
-                  onPressed: _selectedTanggalMulai == null ? null : _createBooking,
+                  onPressed:
+                      _selectedTanggalMulai == null ? null : _createBooking,
                   child: const Text('Konfirmasi Pesanan'),
                 ),
               ],

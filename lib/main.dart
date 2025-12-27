@@ -1,64 +1,81 @@
-// lib/main.dart
+/// Aplikasi Sewa Kos - Main Entry Point
+///
+/// Aplikasi untuk mencari dan menyewa kos menggunakan Supabase sebagai backend
+
 import 'package:flutter/material.dart';
-
-import 'package:shared_preferences/shared_preferences.dart'; // Pastikan sudah ada di pubspec.yaml
-import 'package:sewa_kos/core/services/auth_service.dart'; // Import AuthService
-import 'package:sewa_kos/features/auth/screens/login_screen.dart'; // Import LoginScreen
-import 'package:sewa_kos/features/shared_features/screens/main_app_shell.dart'; // Import MainAppShell
-import 'package:sewa_kos/core/models/user_model.dart'; // Import UserModel
-
-// Supabase import
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'core/config/supabase_config.dart';
+import 'core/constants/app_constants.dart';
+import 'core/services/auth_service.dart';
+import 'features/auth/screens/login_screen.dart';
+import 'features/shared_features/screens/main_app_shell.dart';
+
 Future<void> main() async {
-  // Pastikan Flutter binding terinisialisasi sebelum mengakses platform services
+  // Pastikan Flutter binding terinisialisasi
   WidgetsFlutterBinding.ensureInitialized();
 
   // Inisialisasi Supabase
   await Supabase.initialize(
-    url: 'https://kpomlpwjahijkkvkcsbz.supabase.co',
-    anonKey: 'sb_publishable_cIbpHhpHcBxwSInAVOLncw_kMCaRXqk',
+    url: SupabaseConfig.supabaseUrl,
+    anonKey: SupabaseConfig.supabaseAnonKey,
   );
 
   runApp(const SewaKosApp());
 }
 
+/// Root widget aplikasi
 class SewaKosApp extends StatelessWidget {
   const SewaKosApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Aplikasi Sewa Kos',
-      debugShowCheckedModeBanner: false, // Untuk menyembunyikan banner "DEBUG"
+      title: AppConstants.appName,
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue, // Tema warna utama aplikasi
-        visualDensity: VisualDensity
-            .adaptivePlatformDensity, // Mengatur kepadatan visual sesuai platform
+        primarySwatch: Colors.blue,
+        primaryColor: AppConstants.primaryColor,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: AppConstants.primaryColor,
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppConstants.primaryColor,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius:
+                  BorderRadius.circular(AppConstants.defaultBorderRadius),
+            ),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderRadius:
+                BorderRadius.circular(AppConstants.defaultBorderRadius),
+          ),
+          filled: true,
+          fillColor: Colors.grey.shade100,
+        ),
       ),
-      home: const SplashScreen(), // Aplikasi dimulai dari SplashScreen
-      // Named routes (opsional, tapi bagus untuk navigasi kompleks)
-      routes: {
-        '/login': (context) => const LoginScreen(),
-        // Rute lain bisa ditambahkan di sini, misalnya untuk register jika tidak langsung dari login
-        // '/register': (context) => const RegisterScreen(),
-      },
+      home: const SplashScreen(),
     );
   }
 }
 
-// ======================= SPLASH SCREEN ==========================
-// Widget SplashScreen untuk menampilkan animasi pembuka
+/// Splash Screen untuk menampilkan animasi pembuka
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  _SplashScreenState createState() => _SplashScreenState();
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  // Mixin untuk AnimationController
   late AnimationController _controller;
   late Animation<double> _pinDropAnimation;
   late Animation<double> _pinBounceAnimation;
@@ -67,15 +84,18 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _textFadeAnimation;
   late Animation<Offset> _textSlideAnimation;
 
-  final AuthService _authService =
-      AuthService(); // Instance AuthService untuk cek login
+  final AuthService _authService = AuthService();
 
   @override
   void initState() {
     super.initState();
+    _setupAnimations();
+  }
+
+  void _setupAnimations() {
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 3000), // Total durasi animasi
-      vsync: this, // Menghubungkan controller dengan VSync provider
+      duration: const Duration(milliseconds: 3000),
+      vsync: this,
     );
 
     // Fase 1: Pin Jatuh (0% - 40% durasi)
@@ -83,15 +103,10 @@ class _SplashScreenState extends State<SplashScreen>
       parent: _controller,
       curve: const Interval(0.0, 0.4, curve: Curves.easeOut),
     );
-    // Efek memantul untuk pin
+
     _pinBounceAnimation = CurvedAnimation(
       parent: _controller,
-      curve: Interval(
-        // Hapus 'const' karena .flipped bukanlah konstanta kompilasi
-        0.0,
-        0.4,
-        curve: Curves.elasticOut.flipped, // Efek memantul terbalik
-      ),
+      curve: Interval(0.0, 0.4, curve: Curves.elasticOut.flipped),
     );
 
     // Fase 2: Lingkaran Membesar & Pin Menghilang (30% - 60% durasi)
@@ -112,8 +127,8 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     _textSlideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.5), // Mulai dari bawah sedikit
-      end: Offset.zero, // Berakhir di posisi aslinya
+      begin: const Offset(0, 0.5),
+      end: Offset.zero,
     ).animate(
       CurvedAnimation(
         parent: _controller,
@@ -121,47 +136,41 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-    // Tambahkan listener untuk navigasi setelah animasi selesai
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        _navigateToNextScreen(); // Panggil fungsi navigasi
+        _navigateToNextScreen();
       }
     });
 
-    _controller.forward(); // Mulai animasi
+    _controller.forward();
   }
 
-  // Fungsi untuk mengecek status login dan navigasi ke layar selanjutnya
   Future<void> _navigateToNextScreen() async {
-    final user =
-        await _authService.getLoggedInUser(); // Cek user yang tersimpan
-    Widget nextScreen; // Widget layar tujuan
+    final user = await _authService.getLoggedInUser();
+    Widget nextScreen;
 
     if (user != null) {
-      // Jika user sudah login, arahkan ke MainAppShell dengan data user
       nextScreen = MainAppShell(initialUserData: user);
     } else {
-      // Jika user belum login, arahkan ke LoginScreen
       nextScreen = const LoginScreen();
     }
 
-    // Navigasi ke layar berikutnya dan hapus semua rute sebelumnya dari stack
+    if (!mounted) return;
+
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         pageBuilder: (_, __, ___) => nextScreen,
         transitionsBuilder: (_, animation, __, child) {
-          return FadeTransition(
-              opacity: animation, child: child); // Transisi fade
+          return FadeTransition(opacity: animation, child: child);
         },
-        transitionDuration:
-            const Duration(milliseconds: 800), // Durasi transisi
+        transitionDuration: const Duration(milliseconds: 800),
       ),
     );
   }
 
   @override
   void dispose() {
-    _controller.dispose(); // Pastikan controller di-dispose
+    _controller.dispose();
     super.dispose();
   }
 
@@ -188,7 +197,7 @@ class _SplashScreenState extends State<SplashScreen>
               children: [
                 // Elemen Branding (Teks "SewaKos" dan slogan)
                 Positioned(
-                  top: screenHeight / 2 + 80, // Posisikan di bawah logo
+                  top: screenHeight / 2 + 80,
                   child: FadeTransition(
                     opacity: _textFadeAnimation,
                     child: SlideTransition(
@@ -200,8 +209,7 @@ class _SplashScreenState extends State<SplashScreen>
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               const Text(
-                                // Menggunakan const jika teks statis
-                                "Sewa",
+                                'Sewa',
                                 style: TextStyle(
                                   fontSize: 42,
                                   fontWeight: FontWeight.bold,
@@ -210,7 +218,7 @@ class _SplashScreenState extends State<SplashScreen>
                                 ),
                               ),
                               Text(
-                                "Kos",
+                                'Kos',
                                 style: TextStyle(
                                   fontSize: 42,
                                   fontWeight: FontWeight.bold,
@@ -221,12 +229,11 @@ class _SplashScreenState extends State<SplashScreen>
                             ],
                           ),
                           const SizedBox(height: 8),
-                          const Text(
-                            "Temukan Kos Impianmu",
-                            style: TextStyle(
+                          Text(
+                            AppConstants.slogan,
+                            style: const TextStyle(
                               fontSize: 16,
-                              color: Colors
-                                  .white, // Gunakan Colors.white langsung atau withOpacity
+                              color: Colors.white,
                               fontStyle: FontStyle.italic,
                             ),
                           ),
@@ -252,7 +259,7 @@ class _SplashScreenState extends State<SplashScreen>
                             color: Colors.white,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
+                                color: Colors.black.withValues(alpha: 0.2),
                                 blurRadius: 20,
                                 spreadRadius: 5,
                               ),
@@ -287,7 +294,7 @@ class _SplashScreenState extends State<SplashScreen>
                               color: Colors.white,
                               shadows: [
                                 Shadow(
-                                  color: Colors.black.withOpacity(0.3),
+                                  color: Colors.black.withValues(alpha: 0.3),
                                   blurRadius: 10,
                                   offset: const Offset(0, 5),
                                 ),

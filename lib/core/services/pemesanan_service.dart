@@ -1,136 +1,229 @@
-// lib/core/services/pemesanan_service.dart
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import '../../app_constants.dart'; // Import AppConstants
-import '../models/pemesanan_model.dart'; // Import PemesananModel
-import 'auth_service.dart'; // Import AuthService untuk mendapatkan header otorisasi
+/// PemesananService - Layanan untuk mengelola pemesanan kamar menggunakan Supabase
+///
+/// Mengelola CRUD dan status pemesanan kamar kos
+
+import '../config/supabase_config.dart';
+import '../models/pemesanan_model.dart';
+import '../models/kamar_kos_model.dart';
+import 'auth_service.dart';
 
 class PemesananService {
-  final String _baseUrl = AppConstants.baseUrl;
-  final AuthService _authService = AuthService(); // Inisialisasi AuthService
+  final AuthService _authService = AuthService();
 
-  // Method untuk MEMBUAT PEMESANAN BARU
-  // API: api/pemesanan/add.php
+  /// Membuat pemesanan baru
   Future<Map<String, dynamic>> createPemesanan({
     required int kamarId,
     required DateTime tanggalMulai,
     required int durasiSewa, // Dalam bulan
   }) async {
-    final url = Uri.parse("$_baseUrl/pemesanan/create.php");
-    
     try {
-      final headers = await _authService.getAuthHeaders(); // Dapatkan header otorisasi
-
-      final response = await http.post(
-        url,
-        headers: headers, // Gunakan header otorisasi
-        body: json.encode({
-          'kamar_id': kamarId,
-          'tanggal_mulai': tanggalMulai.toIso8601String().split('T')[0], // Format YYYY-MM-DD
-          'durasi_sewa': durasiSewa,
-        }),
-      );
-
-      final responseBody = json.decode(response.body);
-
-      if (response.statusCode == 201 && responseBody['status'] == 'success') {
-        return {'status': 'success', 'message': responseBody['message'], 'data': responseBody['data']};
-      } else {
-        return {'status': 'error', 'message': responseBody['message'] ?? 'Failed to create booking.'};
+      final currentUser = await _authService.getLoggedInUser();
+      if (currentUser == null) {
+        return {'status': 'error', 'message': 'Silakan login terlebih dahulu.'};
       }
+
+      // Dapatkan harga kamar
+      final kamarResponse = await SupabaseConfig.client
+          .from(SupabaseConfig.kamarKosTable)
+          .select('harga_sewa, status')
+          .eq('id', kamarId)
+          .single();
+
+      final hargaSewa = (kamarResponse['harga_sewa'] as num).toDouble();
+      final statusKamar = kamarResponse['status'] as String;
+
+      // Validasi status kamar
+      if (statusKamar != 'tersedia') {
+        return {
+          'status': 'error',
+          'message': 'Kamar tidak tersedia untuk disewa.',
+        };
+      }
+
+      // Hitung total harga dan tanggal selesai
+      final totalHarga = hargaSewa * durasiSewa;
+      final tanggalSelesai = DateTime(
+          tanggalMulai.year, tanggalMulai.month + durasiSewa, tanggalMulai.day);
+
+      // Insert pemesanan
+      final response = await SupabaseConfig.client
+          .from(SupabaseConfig.pemesananTable)
+          .insert({
+            'user_id': currentUser.id,
+            'kamar_id': kamarId,
+            'tanggal_mulai': tanggalMulai.toIso8601String().split('T')[0],
+            'durasi_sewa': durasiSewa,
+            'tanggal_selesai': tanggalSelesai.toIso8601String().split('T')[0],
+            'total_harga': totalHarga,
+            'status_pemesanan': StatusPemesanan.menungguPembayaran.toDbString(),
+          })
+          .select()
+          .single();
+
+      return {
+        'status': 'success',
+        'message': 'Pemesanan berhasil dibuat. Silakan lakukan pembayaran.',
+        'data': Pemesanan.fromJson(response),
+      };
     } catch (e) {
-      print('Error during createPemesanan: $e');
-      return {'status': 'error', 'message': 'Failed to connect to server. Please try again later.'};
+      return {
+        'status': 'error',
+        'message': 'Gagal membuat pemesanan. Silakan coba lagi.',
+      };
     }
   }
 
-  // Method untuk MENGAMBIL DAFTAR PEMESANAN (untuk penyewa atau pemilik kos)
-  // API: api/pemesanan/list.php
-  Future<List<Pemesanan>> getListPemesanan() async {
-    final url = Uri.parse("$_baseUrl/pemesanan/list.php");
-    
+  /// Mengambil daftar pemesanan user (penyewa melihat pemesanannya)
+  Future<List<Pemesanan>> getMyPemesanan() async {
     try {
-      final headers = await _authService.getAuthHeaders(); // Dapatkan header otorisasi
+      final currentUser = await _authService.getLoggedInUser();
+      if (currentUser == null) return [];
 
-      final response = await http.get(
-        url,
-        headers: headers, // Kirim header otorisasi
-      );
+      final response = await SupabaseConfig.client
+          .from(SupabaseConfig.pemesananTable)
+          .select('''
+            *,
+            users(username, nama_lengkap),
+            kamar_kos(
+              nama_kamar, 
+              harga_sewa,
+              kos(
+                nama_kos, 
+                alamat, 
+                user_id,
+                users(username, nama_lengkap)
+              )
+            )
+          ''')
+          .eq('user_id', currentUser.id)
+          .order('created_at', ascending: false);
 
-      final responseBody = json.decode(response.body);
-
-      if (response.statusCode == 200 && responseBody['status'] == 'success') {
-        final List<dynamic> pemesananData = responseBody['data'];
-        return pemesananData.map((json) => Pemesanan.fromJson(json)).toList();
-      } else {
-        print('Error fetching pemesanan list: ${responseBody['message']}');
-        return []; // Kembalikan list kosong jika gagal
-      }
+      return (response as List)
+          .map((json) => Pemesanan.fromJson(json))
+          .toList();
     } catch (e) {
-      print('Error during getListPemesanan: $e');
       return [];
     }
   }
 
-  // Method untuk MENGAMBIL DETAIL PEMESANAN berdasarkan ID
-  // API: api/pemesanan/detail.php?id={id_pemesanan}
-  Future<Pemesanan?> getPemesananDetail(int pemesananId) async {
-    final url = Uri.parse("$_baseUrl/pemesanan/detail.php?id=$pemesananId");
-    
+  /// Mengambil daftar pemesanan untuk pemilik kos (pemesanan masuk)
+  Future<List<Pemesanan>> getIncomingPemesanan() async {
     try {
-      final headers = await _authService.getAuthHeaders(); // Dapatkan header otorisasi
+      final currentUser = await _authService.getLoggedInUser();
+      if (currentUser == null) return [];
 
-      final response = await http.get(
-        url,
-        headers: headers, // Kirim header otorisasi
-      );
+      // Query pemesanan yang kamarnya berada di kos milik user ini
+      final response = await SupabaseConfig.client
+          .from(SupabaseConfig.pemesananTable)
+          .select('''
+            *,
+            users(username, nama_lengkap),
+            kamar_kos!inner(
+              nama_kamar, 
+              harga_sewa,
+              kos!inner(
+                nama_kos, 
+                alamat, 
+                user_id,
+                users(username, nama_lengkap)
+              )
+            )
+          ''')
+          .eq('kamar_kos.kos.user_id', currentUser.id)
+          .order('created_at', ascending: false);
 
-      final responseBody = json.decode(response.body);
-
-      if (response.statusCode == 200 && responseBody['status'] == 'success') {
-        return Pemesanan.fromJson(responseBody['data']);
-      } else {
-        print('Error fetching pemesanan detail: ${responseBody['message']}');
-        return null; // Kembalikan null jika pemesanan tidak ditemukan atau gagal
-      }
+      return (response as List)
+          .map((json) => Pemesanan.fromJson(json))
+          .toList();
     } catch (e) {
-      print('Error during getPemesananDetail: $e');
+      return [];
+    }
+  }
+
+  /// Mengambil detail pemesanan berdasarkan ID
+  Future<Pemesanan?> getPemesananDetail(int pemesananId) async {
+    try {
+      final response = await SupabaseConfig.client
+          .from(SupabaseConfig.pemesananTable)
+          .select('''
+            *,
+            users(username, nama_lengkap),
+            kamar_kos(
+              nama_kamar, 
+              harga_sewa,
+              kos(
+                nama_kos, 
+                alamat, 
+                user_id,
+                users(username, nama_lengkap)
+              )
+            )
+          ''')
+          .eq('id', pemesananId)
+          .single();
+
+      return Pemesanan.fromJson(response);
+    } catch (e) {
       return null;
     }
   }
 
-  // Method untuk MENGUBAH STATUS PEMESANAN (misal: 'terkonfirmasi', 'dibatalkan')
-  // API: api/pemesanan/update_status.php
+  /// Mengubah status pemesanan
   Future<Map<String, dynamic>> updatePemesananStatus({
     required int pemesananId,
-    required String newStatus, // Contoh: 'terkonfirmasi', 'dibatalkan'
+    required StatusPemesanan newStatus,
   }) async {
-    final url = Uri.parse("$_baseUrl/pemesanan/update_status.php");
-    
     try {
-      final headers = await _authService.getAuthHeaders(); // Dapatkan header otorisasi
-
-      final response = await http.put(
-        url,
-        headers: headers,
-        body: json.encode({
-          'pemesanan_id': pemesananId,
-          'status_pemesanan': newStatus,
-        }),
-      );
-
-      final responseBody = json.decode(response.body);
-
-      if (response.statusCode == 200 && responseBody['status'] == 'success') {
-        return {'status': 'success', 'message': responseBody['message']};
-      } else {
-        return {'status': 'error', 'message': responseBody['message'] ?? 'Failed to update booking status.'};
+      final currentUser = await _authService.getLoggedInUser();
+      if (currentUser == null) {
+        return {'status': 'error', 'message': 'Silakan login terlebih dahulu.'};
       }
+
+      await SupabaseConfig.client.from(SupabaseConfig.pemesananTable).update({
+        'status_pemesanan': newStatus.toDbString(),
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', pemesananId);
+
+      // Jika status terkonfirmasi, update status kamar menjadi terisi
+      if (newStatus == StatusPemesanan.terkonfirmasi) {
+        final pemesanan = await getPemesananDetail(pemesananId);
+        if (pemesanan != null) {
+          await SupabaseConfig.client
+              .from(SupabaseConfig.kamarKosTable)
+              .update({'status': StatusKamar.terisi.toDbString()}).eq(
+                  'id', pemesanan.kamarId);
+        }
+      }
+
+      // Jika status dibatalkan atau selesai, update status kamar menjadi tersedia
+      if (newStatus == StatusPemesanan.dibatalkan ||
+          newStatus == StatusPemesanan.selesai) {
+        final pemesanan = await getPemesananDetail(pemesananId);
+        if (pemesanan != null) {
+          await SupabaseConfig.client
+              .from(SupabaseConfig.kamarKosTable)
+              .update({'status': StatusKamar.tersedia.toDbString()}).eq(
+                  'id', pemesanan.kamarId);
+        }
+      }
+
+      return {
+        'status': 'success',
+        'message': 'Status pemesanan berhasil diperbarui.',
+      };
     } catch (e) {
-      print('Error during updatePemesananStatus: $e');
-      return {'status': 'error', 'message': 'Failed to connect to server. Please try again later.'};
+      return {
+        'status': 'error',
+        'message': 'Gagal memperbarui status pemesanan. Silakan coba lagi.',
+      };
     }
   }
 
-  // TODO: Tambahkan method untuk deletePemesanan jika API-nya sudah ada
+  /// Membatalkan pemesanan
+  Future<Map<String, dynamic>> cancelPemesanan(int pemesananId) async {
+    return updatePemesananStatus(
+      pemesananId: pemesananId,
+      newStatus: StatusPemesanan.dibatalkan,
+    );
+  }
 }
