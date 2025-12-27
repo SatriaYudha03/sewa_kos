@@ -2,9 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:sewa_kos/core/constants/app_constants.dart';
 import 'package:sewa_kos/core/models/pemesanan_model.dart';
-import 'package:sewa_kos/core/models/pembayaran_model.dart';
+import 'package:sewa_kos/core/models/pembayaran_model.dart'; // Pastikan import ini ada
 import 'package:sewa_kos/core/services/pemesanan_service.dart';
-import 'package:sewa_kos/core/services/pembayaran_service.dart';
+import 'package:sewa_kos/core/services/pembayaran_service.dart'; // Pastikan import ini ada
 
 class IncomingBookingsScreen extends StatefulWidget {
   const IncomingBookingsScreen({super.key});
@@ -90,6 +90,7 @@ class _IncomingBookingsScreenState extends State<IncomingBookingsScreen> {
     }
   }
 
+  // Fungsi untuk menampilkan detail pembayaran dan opsi verifikasi
   Future<void> _showPaymentVerificationDialog(Pemesanan pemesanan) async {
     List<Pembayaran> payments = [];
     bool isLoadingPayments = true;
@@ -131,7 +132,7 @@ class _IncomingBookingsScreenState extends State<IncomingBookingsScreen> {
                         : Column(
                             children: payments.map((payment) {
                               ImageProvider? proofImage;
-                              if (payment.buktiTransferId != null) {
+                              if (payment.hasBuktiTransfer) { // Menggunakan hasBuktiTransfer
                                 final fullImageUrl = '${AppConstants.baseUrl}/images/serve.php?type=bukti_pembayaran&id=${payment.id}';
                                 print('DEBUG_PROOF_IMAGE_URL: Mencoba memuat bukti dari: $fullImageUrl');
                                 proofImage = NetworkImage(fullImageUrl);
@@ -155,7 +156,7 @@ class _IncomingBookingsScreenState extends State<IncomingBookingsScreen> {
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                      if (payment.buktiTransferId != null)
+                                      if (payment.hasBuktiTransfer) // Cek hasBuktiTransfer
                                         Column(
                                           children: [
                                             const SizedBox(height: 8),
@@ -225,7 +226,7 @@ class _IncomingBookingsScreenState extends State<IncomingBookingsScreen> {
     try {
       final response = await _pembayaranService.verifyPayment(
         pembayaranId: pembayaranId,
-        statusPembayaran: newStatus,
+        status: newStatus,
       );
       if (mounted) {
         if (response['status'] == 'success') {

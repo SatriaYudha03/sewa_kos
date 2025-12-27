@@ -1,14 +1,16 @@
-// lib/features/tenant_dashboard/screens/upload_payment_proof_screen.dart
+// lib/features/tenant_dashboard/screens/upload_payment_proof_screen.dart (DIUPDATE)
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sewa_kos/core/constants/app_constants.dart';
-import 'package:sewa_kos/core/models/pemesanan_model.dart'; // Import PemesananModel
-import 'package:sewa_kos/core/services/pembayaran_service.dart'; // Import PembayaranService
-import 'dart:io'; // Untuk File
+import 'package:sewa_kos/core/models/pemesanan_model.dart';
+import 'package:sewa_kos/core/services/pembayaran_service.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:typed_data'; // Untuk Uint8List
 
 class UploadPaymentProofScreen extends StatefulWidget {
-  final Pemesanan pemesanan; // Pemesanan yang akan diupload buktinya
-  final VoidCallback onProofUploaded; // Callback setelah berhasil upload
+  final Pemesanan pemesanan;
+  final VoidCallback onProofUploaded;
 
   const UploadPaymentProofScreen({
     super.key,
@@ -24,7 +26,9 @@ class _UploadPaymentProofScreenState extends State<UploadPaymentProofScreen> {
   final PembayaranService _pembayaranService = PembayaranService();
   final ImagePicker _picker = ImagePicker();
 
-  XFile? _pickedImage;
+  XFile? _pickedImageFile;
+  Uint8List? _pickedImageBytes; // Sudah ada
+
   final TextEditingController _jumlahBayarController = TextEditingController();
   String? _selectedMetodePembayaran;
   bool _isLoading = false;
@@ -32,7 +36,6 @@ class _UploadPaymentProofScreenState extends State<UploadPaymentProofScreen> {
   @override
   void initState() {
     super.initState();
-    // Inisialisasi jumlah bayar dengan total harga pemesanan
     _jumlahBayarController.text = widget.pemesanan.totalHarga.toStringAsFixed(0);
   }
 
@@ -46,15 +49,17 @@ class _UploadPaymentProofScreenState extends State<UploadPaymentProofScreen> {
   Future<void> _pickImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
+      final bytes = await image.readAsBytes();
       setState(() {
-        _pickedImage = image;
+        _pickedImageFile = image;
+        _pickedImageBytes = bytes;
       });
     }
   }
 
   // Fungsi untuk mengunggah bukti pembayaran
   Future<void> _uploadProof() async {
-    if (_pickedImage == null) {
+    if (_pickedImageFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Mohon pilih bukti pembayaran terlebih dahulu.')),
       );
@@ -82,7 +87,8 @@ class _UploadPaymentProofScreenState extends State<UploadPaymentProofScreen> {
         pemesananId: widget.pemesanan.id,
         jumlahBayar: double.parse(_jumlahBayarController.text),
         metodePembayaran: _selectedMetodePembayaran!,
-        buktiPembayaranFile: _pickedImage!,
+        buktiPembayaranFile: _pickedImageFile!,
+        buktiPembayaranBytes: _pickedImageBytes, // <-- KIRIM BYTES JUGA DI SINI
       );
 
       if (mounted) {
@@ -90,8 +96,8 @@ class _UploadPaymentProofScreenState extends State<UploadPaymentProofScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(response['message'] ?? 'Bukti pembayaran berhasil diunggah!'), backgroundColor: AppConstants.successColor),
           );
-          widget.onProofUploaded(); // Panggil callback untuk refresh riwayat pemesanan
-          Navigator.pop(context); // Kembali ke layar sebelumnya
+          widget.onProofUploaded();
+          Navigator.pop(context);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(response['message'] ?? 'Gagal mengunggah bukti pembayaran.'), backgroundColor: AppConstants.errorColor),
@@ -129,7 +135,7 @@ class _UploadPaymentProofScreenState extends State<UploadPaymentProofScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Pemesanan untuk: ${widget.pemesanan.namaKamar} di ${widget.pemesanan.namaKos}',
+                    'Pemesanan untuk: ${widget.pemesanan.namaKamar ?? ''} di ${widget.pemesanan.namaKos ?? ''}',
                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
@@ -139,7 +145,6 @@ class _UploadPaymentProofScreenState extends State<UploadPaymentProofScreen> {
                   ),
                   const SizedBox(height: AppConstants.defaultPadding),
 
-                  // Input Jumlah Bayar
                   TextFormField(
                     controller: _jumlahBayarController,
                     keyboardType: TextInputType.number,
@@ -152,7 +157,6 @@ class _UploadPaymentProofScreenState extends State<UploadPaymentProofScreen> {
                   ),
                   const SizedBox(height: AppConstants.defaultPadding),
 
-                  // Pilih Metode Pembayaran
                   DropdownButtonFormField<String>(
                     value: _selectedMetodePembayaran,
                     decoration: const InputDecoration(
@@ -175,14 +179,13 @@ class _UploadPaymentProofScreenState extends State<UploadPaymentProofScreen> {
                   ),
                   const SizedBox(height: AppConstants.defaultPadding),
 
-                  // Tampilan dan Pilih Gambar
                   const Text(
                     'Bukti Pembayaran:',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Center(
-                    child: _pickedImage == null
+                    child: _pickedImageBytes == null
                         ? Container(
                             width: double.infinity,
                             height: 200,
@@ -203,8 +206,8 @@ class _UploadPaymentProofScreenState extends State<UploadPaymentProofScreen> {
                               ],
                             ),
                           )
-                        : Image.file(
-                            File(_pickedImage!.path),
+                        : Image.memory(
+                            _pickedImageBytes!,
                             height: 200,
                             width: double.infinity,
                             fit: BoxFit.cover,
@@ -224,7 +227,6 @@ class _UploadPaymentProofScreenState extends State<UploadPaymentProofScreen> {
                   ),
                   const SizedBox(height: AppConstants.defaultPadding * 2),
 
-                  // Tombol Unggah
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(

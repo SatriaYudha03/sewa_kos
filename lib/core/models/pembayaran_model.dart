@@ -1,5 +1,3 @@
-// lib/core/models/pembayaran_model.dart (DIUPDATE)
-
 class Pembayaran {
   final int id;
   final int pemesananId;
@@ -7,7 +5,7 @@ class Pembayaran {
   final DateTime tanggalPembayaran;
   final String? metodePembayaran;
   final String statusPembayaran;
-  final int? buktiTransferId; // <--- UBAH INI: sekarang menyimpan ID Pembayaran (untuk serve.php)
+  final bool hasBuktiTransfer; // <--- UBAH INI: Flag apakah ada bukti transfer
 
   Pembayaran({
     required this.id,
@@ -16,7 +14,7 @@ class Pembayaran {
     required this.tanggalPembayaran,
     this.metodePembayaran,
     required this.statusPembayaran,
-    this.buktiTransferId, // <--- UBAH INI
+    required this.hasBuktiTransfer, // <--- UBAH INI
   });
 
   factory Pembayaran.fromJson(Map<String, dynamic> json) {
@@ -27,8 +25,7 @@ class Pembayaran {
       tanggalPembayaran: DateTime.parse(json['tanggal_pembayaran'] as String),
       metodePembayaran: json.containsKey('metode_pembayaran') ? json['metode_pembayaran'] as String? : null,
       statusPembayaran: json['status_pembayaran'] as String,
-      buktiTransferId: json.containsKey('bukti_transfer') ? (json['bukti_transfer'] != null ? json['id'] as int? : null) : null, // <--- LOGIKA BARU
-      // Jika bukti_transfer ada di JSON (berarti ada BLOB di DB), gunakan ID pembayaran itu sendiri untuk mengambil gambar
+      hasBuktiTransfer: (json['has_bukti_transfer'] as int) == 1, // <--- LOGIKA BARU
     );
   }
 
@@ -40,7 +37,6 @@ class Pembayaran {
       'tanggal_pembayaran': tanggalPembayaran.toIso8601String(),
       'metode_pembayaran': metodePembayaran,
       'status_pembayaran': statusPembayaran,
-      // 'bukti_transfer_id': buktiTransferId, // Tidak relevan untuk dikirim
     };
   }
 }
