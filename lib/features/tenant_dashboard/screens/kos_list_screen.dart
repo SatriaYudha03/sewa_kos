@@ -110,8 +110,10 @@ class _KosListScreenState extends State<KosListScreen> {
     double tempMaxPrice = _maxPriceFilter ?? 5000000;
     String tempFasilitas = _fasilitasFilter;
 
-    final minPriceController = TextEditingController(text: tempMinPrice.toStringAsFixed(0));
-    final maxPriceController = TextEditingController(text: tempMaxPrice.toStringAsFixed(0));
+    final minPriceController =
+        TextEditingController(text: tempMinPrice.toStringAsFixed(0));
+    final maxPriceController =
+        TextEditingController(text: tempMaxPrice.toStringAsFixed(0));
     final fasilitasController = TextEditingController(text: tempFasilitas);
 
     await showDialog(
