@@ -131,7 +131,7 @@ class _KosListScreenState extends State<KosListScreen> {
                   color: AppConstants.primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.filter_list_rounded,
                   color: AppConstants.primaryColor,
                   size: 24,
@@ -181,7 +181,7 @@ class _KosListScreenState extends State<KosListScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
+                      borderSide: const BorderSide(
                         color: AppConstants.primaryColor,
                         width: 2,
                       ),
@@ -224,7 +224,7 @@ class _KosListScreenState extends State<KosListScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
+                      borderSide: const BorderSide(
                         color: AppConstants.primaryColor,
                         width: 2,
                       ),
@@ -269,7 +269,7 @@ class _KosListScreenState extends State<KosListScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
+                      borderSide: const BorderSide(
                         color: AppConstants.primaryColor,
                         width: 2,
                       ),

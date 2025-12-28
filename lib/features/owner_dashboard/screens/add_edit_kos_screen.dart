@@ -189,6 +189,14 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
     String? fotoUtamaBase64;
     if (_imageBytes != null) {
       fotoUtamaBase64 = base64Encode(_imageBytes!);
+      print('=== DEBUG ADD/EDIT KOS ===');
+      print('Image bytes length: ${_imageBytes!.length}');
+      print('Base64 length: ${fotoUtamaBase64.length}');
+      print(
+          'Base64 preview (first 100 chars): ${fotoUtamaBase64.substring(0, fotoUtamaBase64.length > 100 ? 100 : fotoUtamaBase64.length)}');
+    } else {
+      print('=== DEBUG ADD/EDIT KOS ===');
+      print('No image selected (_imageBytes is null)');
     }
     // Jika _imageFile null, artinya user tidak memilih gambar baru.
     // Jika ini mode edit dan _imageFile null, kita tidak akan mengubah gambar.
@@ -203,6 +211,13 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
     try {
       if (widget.kos == null) {
         // Mode Tambah Kos Baru
+        print('=== CALLING addKos ===');
+        print('namaKos: ${_namaKosController.text}');
+        print('alamat: ${_alamatController.text}');
+        print('deskripsi: ${_deskripsiController.text}');
+        print('fotoUtama length: ${fotoUtamaBase64?.length ?? 0}');
+        print('fasilitasUmum: ${_fasilitasUmumController.text}');
+
         response = await kosService.addKos(
           namaKos: _namaKosController.text,
           alamat: _alamatController.text,
@@ -393,7 +408,7 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        Text(
+        const Text(
           'Tap untuk pilih foto',
           style: TextStyle(
             color: AppConstants.textColorSecondary,
@@ -464,14 +479,14 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
         centerTitle: true,
       ),
       body: _isLoading
-          ? Center(
+          ? const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const CircularProgressIndicator(
+                  CircularProgressIndicator(
                     color: AppConstants.primaryColor,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Text(
                     'Menyimpan data...',
                     style: TextStyle(

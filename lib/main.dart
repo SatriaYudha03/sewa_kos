@@ -192,20 +192,85 @@ class _SplashScreenState extends State<SplashScreen>
           builder: (context, child) {
             return Stack(
               alignment: Alignment.center,
-              children: [
-                // Elemen Branding (Teks "SewaKos" dan slogan)
+              children: <Widget>[
+                // Logo section (centered on screen)
                 Positioned(
-                  top: screenHeight / 2 + 80,
+                  top: (screenHeight - 120) / 2,
+                  child: SizedBox(
+                    width: 120,
+                    height: 120,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: <Widget>[
+                        Transform.scale(
+                          scale: _circleScaleAnimation.value,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 20,
+                                  spreadRadius: 5,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        FadeTransition(
+                          opacity: _houseFadeAnimation,
+                          child: Icon(
+                            Icons.home_rounded,
+                            size: 70,
+                            color: Colors.blue.shade700,
+                          ),
+                        ),
+                        Positioned(
+                          top: 0,
+                          child: Transform.translate(
+                            offset: Offset(
+                              0,
+                              (-screenHeight / 2) +
+                                  (_pinDropAnimation.value *
+                                      (screenHeight / 2)) -
+                                  (_pinBounceAnimation.value * 30),
+                            ),
+                            child: Opacity(
+                              opacity: 1.0 - _circleScaleAnimation.value,
+                              child: Icon(
+                                Icons.location_on,
+                                size: 120,
+                                color: Colors.white,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withOpacity(0.3),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 5),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Branding (below logo)
+                Positioned(
+                  top: (screenHeight - 120) / 2 + 140,
                   child: FadeTransition(
                     opacity: _textFadeAnimation,
                     child: SlideTransition(
                       position: _textSlideAnimation,
-                      child: const Column(
+                      child: Column(
                         mainAxisSize: MainAxisSize.min,
-                        children: [
+                        children: <Widget>[
                           Row(
                             mainAxisSize: MainAxisSize.min,
-                            children: [
+                            children: const <Widget>[
                               Text(
                                 'Sewa',
                                 style: TextStyle(
@@ -226,10 +291,10 @@ class _SplashScreenState extends State<SplashScreen>
                               ),
                             ],
                           ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           Text(
                             AppConstants.slogan,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 16,
                               color: Colors.white,
                               fontStyle: FontStyle.italic,
@@ -238,70 +303,6 @@ class _SplashScreenState extends State<SplashScreen>
                         ],
                       ),
                     ),
-                  ),
-                ),
-
-                // Elemen Logo (Pin, Lingkaran, Rumah)
-                SizedBox(
-                  width: 120,
-                  height: 120,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // Lingkaran yang membesar
-                      Transform.scale(
-                        scale: _circleScaleAnimation.value,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.2),
-                                blurRadius: 20,
-                                spreadRadius: 5,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      // Ikon rumah di dalam lingkaran
-                      FadeTransition(
-                        opacity: _houseFadeAnimation,
-                        child: Icon(
-                          Icons.home_rounded,
-                          size: 70,
-                          color: Colors.blue.shade700,
-                        ),
-                      ),
-                      // Ikon Pin Lokasi yang jatuh
-                      Positioned(
-                        top: 0,
-                        child: Transform.translate(
-                          offset: Offset(
-                            0,
-                            (-screenHeight / 2) +
-                                (_pinDropAnimation.value * (screenHeight / 2)) -
-                                (_pinBounceAnimation.value * 30),
-                          ),
-                          child: Opacity(
-                            opacity: 1.0 - _circleScaleAnimation.value,
-                            child: Icon(
-                              Icons.location_on,
-                              size: 120,
-                              color: Colors.white,
-                              shadows: [
-                                Shadow(
-                                  color: Colors.black.withValues(alpha: 0.3),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 5),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
                 ),
               ],

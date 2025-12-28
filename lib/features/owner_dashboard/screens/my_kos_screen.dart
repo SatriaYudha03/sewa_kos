@@ -148,15 +148,6 @@ class _MyKosScreenState extends State<MyKosScreen> {
               itemBuilder: (context, index) {
                 final kos = snapshot.data![index];
 
-                ImageProvider? backgroundImage;
-                if (kos.hasImage && kos.fotoUtamaUrl != null) {
-                  // Gunakan URL dari Supabase Storage
-                  backgroundImage = NetworkImage(kos.fotoUtamaUrl!);
-                } else {
-                  backgroundImage =
-                      const AssetImage(AppConstants.imageAssetPlaceholderKos);
-                }
-
                 return Card(
                   margin: const EdgeInsets.symmetric(
                       vertical: AppConstants.defaultMargin / 2),
@@ -166,19 +157,65 @@ class _MyKosScreenState extends State<MyKosScreen> {
                   child: ListTile(
                     contentPadding:
                         const EdgeInsets.all(AppConstants.defaultPadding),
-                    leading: CircleAvatar(
-                      radius: 30,
-                      backgroundColor: Colors.blue.shade100,
-                      backgroundImage: backgroundImage,
-                      onBackgroundImageError: (exception, stackTrace) {
-                        debugPrint(
-                            'ERROR_IMAGE_LOAD: Gagal memuat gambar untuk ${kos.namaKos}: $exception');
-                      },
-                      child: !kos.hasImage
-                          ? const Icon(Icons.apartment,
-                              size: 30, color: AppConstants.primaryColor)
-                          : null,
-                    ),
+                    leading: kos.hasImage && kos.fotoUtamaUrl != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              kos.fotoUtamaUrl!,
+                              width: 60,
+                              height: 60,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                debugPrint(
+                                    'ERROR_IMAGE_LOAD: Gagal memuat gambar untuk ${kos.namaKos}: $error');
+                                return Container(
+                                  width: 60,
+                                  height: 60,
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.shade100,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(Icons.apartment,
+                                      size: 30,
+                                      color: AppConstants.primaryColor),
+                                );
+                              },
+                              loadingBuilder:
+                                  (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Container(
+                                  width: 60,
+                                  height: 60,
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.shade100,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      value:
+                                          loadingProgress.expectedTotalBytes !=
+                                                  null
+                                              ? loadingProgress
+                                                      .cumulativeBytesLoaded /
+                                                  loadingProgress
+                                                      .expectedTotalBytes!
+                                              : null,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          )
+                        : Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.apartment,
+                                size: 30, color: AppConstants.primaryColor),
+                          ),
                     title: Text(
                       kos.namaKos,
                       style: const TextStyle(
