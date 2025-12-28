@@ -191,7 +191,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       body: _isUpdating
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
+          : SingleChildScrollView(
               padding: const EdgeInsets.all(AppConstants.defaultPadding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,10 +210,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 30),
-                  // Informasi Akun
+                  // Informasi Profil
                   _buildProfileInfoCard(
                     context,
-                    title: 'Informasi Akun',
+                    title: 'Informasi Profil',
                     children: [
                       _buildProfileInfoRow(
                           Icons.person, 'Username', _displayUser.username),
@@ -221,21 +221,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Icons.email, 'Email', _displayUser.email),
                       _buildProfileInfoRow(Icons.info_outline, 'Role',
                           (_displayUser.roleName ?? 'User').toUpperCase()),
-                    ],
-                  ),
-                  const SizedBox(height: AppConstants.defaultPadding),
-                  // Detail Pribadi
-                  _buildProfileInfoCard(
-                    context,
-                    title: 'Detail Pribadi',
-                    children: [
                       _buildProfileInfoRow(Icons.badge, 'Nama Lengkap',
                           _displayUser.namaLengkap ?? '- Belum diisi -'),
                       _buildProfileInfoRow(Icons.phone, 'Nomor Telepon',
                           _displayUser.noTelepon ?? '- Belum diisi -'),
                     ],
                   ),
-                  const Spacer(),
+                  const SizedBox(height: 30),
                   Center(
                     child: ElevatedButton.icon(
                       onPressed: _logout,
@@ -254,6 +246,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 20),
                 ],
               ),
             ),

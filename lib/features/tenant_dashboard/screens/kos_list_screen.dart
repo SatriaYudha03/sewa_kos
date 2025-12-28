@@ -32,9 +32,9 @@ class _KosListScreenState extends State<KosListScreen> {
 
   // --- Daftar gambar banner statis dari assets ---
   final List<String> _staticBannerImages = [
-    'images/banner1.png',
-    'images/banner2.png',
-    'images/banner3.png',
+    'assets/images/banner1.png',
+    'assets/images/banner2.png',
+    'assets/images/banner3.png',
   ];
 
   Timer? _timer; // Deklarasi Timer
@@ -110,64 +110,253 @@ class _KosListScreenState extends State<KosListScreen> {
     double tempMaxPrice = _maxPriceFilter ?? 5000000;
     String tempFasilitas = _fasilitasFilter;
 
+    final minPriceController = TextEditingController(text: tempMinPrice.toStringAsFixed(0));
+    final maxPriceController = TextEditingController(text: tempMaxPrice.toStringAsFixed(0));
+    final fasilitasController = TextEditingController(text: tempFasilitas);
+
     await showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Filter Kos'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppConstants.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.filter_list_rounded,
+                  color: AppConstants.primaryColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Filter Kos',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const SizedBox(height: 8),
+                // Harga Min
+                Text(
+                  'Harga Minimum',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 8),
                 TextField(
                   keyboardType: TextInputType.number,
-                  decoration:
-                      const InputDecoration(labelText: 'Harga Min (Rp)'),
-                  controller: TextEditingController(
-                      text: tempMinPrice.toStringAsFixed(0)),
+                  controller: minPriceController,
+                  decoration: InputDecoration(
+                    prefixText: 'Rp ',
+                    prefixStyle: TextStyle(
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                    hintText: '0',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: AppConstants.primaryColor,
+                        width: 2,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                  ),
                   onChanged: (val) {
                     tempMinPrice = double.tryParse(val) ?? 0;
                   },
                 ),
+                const SizedBox(height: 16),
+                // Harga Max
+                Text(
+                  'Harga Maksimum',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 8),
                 TextField(
                   keyboardType: TextInputType.number,
-                  decoration:
-                      const InputDecoration(labelText: 'Harga Max (Rp)'),
-                  controller: TextEditingController(
-                      text: tempMaxPrice.toStringAsFixed(0)),
+                  controller: maxPriceController,
+                  decoration: InputDecoration(
+                    prefixText: 'Rp ',
+                    prefixStyle: TextStyle(
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                    hintText: '5000000',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: AppConstants.primaryColor,
+                        width: 2,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                  ),
                   onChanged: (val) {
                     tempMaxPrice = double.tryParse(val) ?? 5000000;
                   },
                 ),
+                const SizedBox(height: 16),
+                // Fasilitas
+                Text(
+                  'Fasilitas',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 8),
                 TextField(
-                  decoration: const InputDecoration(
-                      labelText: 'Fasilitas (pisahkan koma)'),
-                  controller: TextEditingController(text: tempFasilitas),
+                  controller: fasilitasController,
+                  decoration: InputDecoration(
+                    hintText: 'WiFi, AC, Kamar Mandi Dalam...',
+                    hintStyle: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 14,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.category_outlined,
+                      color: Colors.grey[500],
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: AppConstants.primaryColor,
+                        width: 2,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                  ),
                   onChanged: (val) {
                     tempFasilitas = val;
                   },
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  'Pisahkan dengan koma untuk beberapa fasilitas',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[500],
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
               ],
             ),
           ),
+          actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
           actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Batal'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _minPriceFilter = tempMinPrice;
-                  _maxPriceFilter = tempMaxPrice;
-                  _fasilitasFilter = tempFasilitas;
-                });
-                _fetchKosList();
-                Navigator.pop(context);
-              },
-              child: const Text('Terapkan Filter'),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      side: BorderSide(color: Colors.grey[400]!),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      'Batal',
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _minPriceFilter = tempMinPrice;
+                        _maxPriceFilter = tempMaxPrice;
+                        _fasilitasFilter = tempFasilitas;
+                      });
+                      _fetchKosList();
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppConstants.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.check_rounded, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'Terapkan',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         );

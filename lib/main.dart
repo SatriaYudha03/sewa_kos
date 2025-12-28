@@ -1,6 +1,3 @@
-/// Aplikasi Sewa Kos - Main Entry Point
-///
-/// Aplikasi untuk mencari dan menyewa kos menggunakan Supabase sebagai backend
 library;
 
 import 'package:flutter/material.dart';
