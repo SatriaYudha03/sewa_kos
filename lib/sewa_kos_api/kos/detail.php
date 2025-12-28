@@ -2,17 +2,17 @@
 // api/kos/detail.php (DIUPDATE: Tambah kolom has_image)
 
 // --- DEBUGGING SANGAT AGRESIF (HAPUS ini di produksi!) ---
-error_reporting(E_ALL); 
+error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('log_errors', 1);
-ini_set('error_log', '../php_error.log'); 
+ini_set('error_log', '../php_error.log');
 
 error_log("KOS DETAIL DEBUG: Script execution started. Request Method: " . $_SERVER['REQUEST_METHOD']);
 
 // --- HEADER CORS UNIVERSAL ---
-header('Access-Control-Allow-Origin: *'); 
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS'); 
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-User-ID, X-User-Role'); 
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-User-ID, X-User-Role');
 
 // --- IMPORTS ---
 require_once '../config/database.php';
@@ -21,11 +21,11 @@ require_once '../utils/auth_check.php';
 // --- HANDLE PREFLIGHT OPTIONS REQUEST ---
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     error_log("KOS DETAIL DEBUG: Handling OPTIONS request.");
-    header('Access-Control-Allow-Origin: *'); 
-    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS'); 
-    header('Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization, X-User-ID, X-User-Role'); 
-    http_response_code(200); 
-    exit(); 
+    header('Access-Control-Allow-Origin: *');
+    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+    header('Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization, X-User-ID, X-User-Role');
+    http_response_code(200);
+    exit();
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -50,9 +50,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     try {
         $pdo = getDBConnection();
-        // --- PERBAIKAN DI SINI: Tambah kolom has_image ---
-        $stmt = $pdo->prepare("SELECT k.id, k.user_id, k.nama_kos, k.alamat, k.deskripsi, k.fasilitas_umum, k.created_at, k.updated_at,
-                                     (k.foto_utama IS NOT NULL) AS has_image, -- <--- TAMBAHKAN INI
+        // --- Query menggunakan kolom foto_utama_url sesuai schema database ---
+        $stmt = $pdo->prepare("SELECT k.id, k.user_id, k.nama_kos, k.alamat, k.deskripsi, k.fasilitas_umum, k.foto_utama_url, k.created_at, k.updated_at,
+                                     (k.foto_utama_url IS NOT NULL) AS has_image,
                                      u.username as owner_username, u.nama_lengkap as owner_name 
                                FROM kos k 
                                JOIN users u ON k.user_id = u.id 
@@ -76,16 +76,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             echo json_encode(['status' => 'error', 'message' => 'Kos tidak ditemukan.']);
             error_log("KOS DETAIL DEBUG: Kos with ID $kos_id not found.");
         }
-
     } catch (PDOException $e) {
         error_log("KOS DETAIL DEBUG: PDOException: " . $e->getMessage());
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Gagal mengambil detail kos (Database Error).']);
     }
-
 } else {
     http_response_code(405);
     echo json_encode(['status' => 'error', 'message' => 'Metode request tidak diizinkan. Hanya GET.']);
     error_log("KOS DETAIL DEBUG: Invalid request method: " . $_SERVER['REQUEST_METHOD']);
 }
-?>
