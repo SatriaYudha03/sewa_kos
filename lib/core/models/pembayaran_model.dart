@@ -1,6 +1,7 @@
 /// Model Pembayaran yang merepresentasikan tabel `detail_pembayaran` di Supabase
 ///
 /// Tabel detail_pembayaran menyimpan informasi pembayaran untuk setiap pemesanan
+library;
 
 /// Enum untuk status pembayaran
 enum StatusPembayaran {

@@ -1,6 +1,7 @@
 /// KamarService - Layanan untuk mengelola data kamar kos menggunakan Supabase
 ///
 /// Mengelola CRUD untuk kamar dalam setiap kos
+library;
 
 import 'dart:convert';
 import 'dart:typed_data';

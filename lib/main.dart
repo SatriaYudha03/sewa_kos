@@ -1,6 +1,7 @@
 /// Aplikasi Sewa Kos - Main Entry Point
 ///
 /// Aplikasi untuk mencari dan menyewa kos menggunakan Supabase sebagai backend
+library;
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -202,13 +203,13 @@ class _SplashScreenState extends State<SplashScreen>
                     opacity: _textFadeAnimation,
                     child: SlideTransition(
                       position: _textSlideAnimation,
-                      child: Column(
+                      child: const Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Text(
+                              Text(
                                 'Sewa',
                                 style: TextStyle(
                                   fontSize: 42,
@@ -228,10 +229,10 @@ class _SplashScreenState extends State<SplashScreen>
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8),
                           Text(
                             AppConstants.slogan,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               color: Colors.white,
                               fontStyle: FontStyle.italic,

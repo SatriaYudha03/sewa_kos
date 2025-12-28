@@ -2,6 +2,7 @@
 ///
 /// Tabel users menyimpan informasi pengguna aplikasi
 /// dengan relasi ke tabel roles untuk menentukan jenis pengguna
+library;
 
 class User {
   final int id;

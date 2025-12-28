@@ -1,6 +1,7 @@
 /// Model KamarKos yang merepresentasikan tabel `kamar_kos` di Supabase
 ///
 /// Tabel kamar_kos menyimpan informasi kamar yang tersedia di setiap kos
+library;
 
 /// Enum untuk status kamar
 enum StatusKamar {

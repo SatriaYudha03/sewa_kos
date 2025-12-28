@@ -1,6 +1,7 @@
 /// PemesananService - Layanan untuk mengelola pemesanan kamar menggunakan Supabase
 ///
 /// Mengelola CRUD dan status pemesanan kamar kos
+library;
 
 import '../config/supabase_config.dart';
 import '../models/pemesanan_model.dart';

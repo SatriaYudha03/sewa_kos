@@ -134,22 +134,22 @@ class _KamarManagementScreenState extends State<KamarManagementScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.meeting_room_outlined,
+                  const Icon(Icons.meeting_room_outlined,
                       size: 80, color: Colors.grey),
-                  SizedBox(height: 20),
-                  Text(
+                  const SizedBox(height: 20),
+                  const Text(
                     'Belum ada kamar di kos ini.',
                     style: TextStyle(fontSize: 18, color: Colors.grey),
                     textAlign: TextAlign.center,
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   ElevatedButton.icon(
                     onPressed: () => _navigateToAddEditKamar(),
-                    icon: Icon(Icons.add),
-                    label: Text('Tambah Kamar Baru'),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Tambah Kamar Baru'),
                     style: ElevatedButton.styleFrom(
                       padding:
-                          EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     ),
                   ),
                 ],

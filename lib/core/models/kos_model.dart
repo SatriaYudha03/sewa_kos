@@ -1,6 +1,7 @@
 /// Model Kos yang merepresentasikan tabel `kos` di Supabase
 ///
 /// Tabel kos menyimpan informasi properti kos yang dimiliki oleh pemilik_kos
+library;
 
 class Kos {
   final int id;

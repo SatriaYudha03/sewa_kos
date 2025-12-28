@@ -1,6 +1,7 @@
 /// PembayaranService - Layanan untuk mengelola pembayaran menggunakan Supabase
 ///
 /// Mengelola upload bukti pembayaran dan verifikasi pembayaran
+library;
 
 import 'dart:typed_data';
 

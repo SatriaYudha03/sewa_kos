@@ -33,7 +33,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         TextEditingController(text: _displayUser.namaLengkap);
     final TextEditingController noTeleponController =
         TextEditingController(text: _displayUser.noTelepon);
-    final _formKey = GlobalKey<FormState>();
+    final formKey = GlobalKey<FormState>();
 
     await showDialog(
       context: context,
@@ -41,7 +41,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return AlertDialog(
           title: const Text('Edit Profil'),
           content: Form(
-            key: _formKey,
+            key: formKey,
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -51,8 +51,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     decoration:
                         const InputDecoration(labelText: 'Nama Lengkap'),
                     validator: (value) {
-                      if (value != null && value.isEmpty)
+                      if (value != null && value.isEmpty) {
                         return 'Nama Lengkap tidak boleh kosong';
+                      }
                       return null;
                     },
                   ),
@@ -63,8 +64,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const InputDecoration(labelText: 'Nomor Telepon'),
                     keyboardType: TextInputType.phone,
                     validator: (value) {
-                      if (value != null && value.isEmpty)
+                      if (value != null && value.isEmpty) {
                         return 'Nomor Telepon tidak boleh kosong';
+                      }
                       return null;
                     },
                   ),
@@ -79,7 +81,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             ElevatedButton(
               onPressed: () async {
-                if (_formKey.currentState!.validate()) {
+                if (formKey.currentState!.validate()) {
                   // Panggil fungsi update profil
                   await _updateProfile(
                     namaLengkap: namaLengkapController.text,
@@ -311,7 +313,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Text(
               title,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: AppConstants.primaryColor,

@@ -198,7 +198,7 @@ class _LoginScreenState extends State<LoginScreen>
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.home_work_rounded,
                               size: 50,
                               color: AppConstants.primaryColor, // Menggunakan konstanta warna

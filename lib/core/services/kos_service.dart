@@ -1,6 +1,7 @@
 /// KosService - Layanan untuk mengelola data kos menggunakan Supabase
 ///
 /// Mengelola CRUD untuk data kos (properti kos)
+library;
 
 import 'dart:convert';
 import 'dart:typed_data';

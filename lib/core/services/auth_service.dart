@@ -1,6 +1,7 @@
 /// AuthService - Layanan autentikasi menggunakan Supabase
 ///
 /// Mengelola login, register, logout, dan profil pengguna
+library;
 
 import 'dart:convert';
 

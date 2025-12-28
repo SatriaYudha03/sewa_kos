@@ -1,6 +1,7 @@
 /// Model Pemesanan yang merepresentasikan tabel `pemesanan` di Supabase
 ///
 /// Tabel pemesanan menyimpan informasi pemesanan kamar kos oleh penyewa
+library;
 
 /// Enum untuk status pemesanan
 enum StatusPemesanan {

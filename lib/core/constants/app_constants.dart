@@ -1,6 +1,7 @@
 /// Konstanta aplikasi Sewa Kos
 ///
 /// Berisi konstanta-konstanta yang digunakan di seluruh aplikasi
+library;
 
 import 'package:flutter/material.dart';
 
