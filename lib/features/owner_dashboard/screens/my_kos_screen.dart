@@ -22,23 +22,19 @@ class _MyKosScreenState extends State<MyKosScreen> {
   @override
   void initState() {
     super.initState();
-    print('DEBUG: MyKosScreenState initState called.');
     _fetchMyKos();
   }
 
   @override
   void dispose() {
-    print('DEBUG: MyKosScreenState dispose called.');
     super.dispose();
   }
 
   Future<void> _fetchMyKos() async {
-    print('DEBUG: _fetchMyKos triggered. Old refreshKey: $_refreshKey');
     // Langkah 1: Set Future ke null untuk memaksa FutureBuilder ke state waiting
     setState(() {
       _myKosFuture = null;
       _refreshKey++; // Tingkatkan key untuk memastikan rebuild
-      print('DEBUG: _myKosFuture set to null, new refreshKey: $_refreshKey');
     });
 
     // Langkah 2: Ambil data baru
@@ -47,7 +43,6 @@ class _MyKosScreenState extends State<MyKosScreen> {
     // Langkah 3: Set Future yang baru setelah data diambil
     setState(() {
       _myKosFuture = newFuture;
-      print('DEBUG: _myKosFuture assigned new Future.');
     });
   }
 
@@ -58,7 +53,6 @@ class _MyKosScreenState extends State<MyKosScreen> {
     );
 
     if (result == true) {
-      print('DEBUG: AddEditKosScreen mengembalikan true, memicu _fetchMyKos.');
       _fetchMyKos(); // Refresh daftar setelah berhasil simpan/edit
     }
   }
@@ -72,8 +66,7 @@ class _MyKosScreenState extends State<MyKosScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print(
-        'DEBUG: MyKosScreen build method called. Current refreshKey: $_refreshKey');
+    // Debug logging removed for production
     return Scaffold(
       appBar: AppBar(
         title: const Text('Kos Saya'),

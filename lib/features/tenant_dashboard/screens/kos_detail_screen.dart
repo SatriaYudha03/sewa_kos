@@ -29,7 +29,7 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
   KamarKos? _selectedKamar;
   DateTime? _selectedTanggalMulai;
   int _durasiSewa = 1;
-  
+
   // State untuk upload bukti pembayaran
   XFile? _buktiPembayaranFile;
   Uint8List? _buktiPembayaranBytes;
@@ -110,7 +110,7 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
       );
       return;
     }
-    
+
     // Validasi bukti pembayaran jika user memilih upload sekarang
     if (_uploadBuktiSekarang && _buktiPembayaranFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -137,9 +137,11 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
       if (mounted) {
         if (response['status'] == 'success') {
           final pemesananId = response['data']?.id;
-          
+
           // Jika user memilih upload bukti sekarang, upload bukti pembayaran
-          if (_uploadBuktiSekarang && _buktiPembayaranFile != null && pemesananId != null) {
+          if (_uploadBuktiSekarang &&
+              _buktiPembayaranFile != null &&
+              pemesananId != null) {
             final totalHarga = _selectedKamar!.hargaSewa * _durasiSewa;
             final uploadResponse = await _pembayaranService.uploadPaymentProof(
               pemesananId: pemesananId,
@@ -149,31 +151,36 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
               buktiPembayaranBytes: _buktiPembayaranBytes,
               jenisPembayaran: 'Pembayaran Awal',
             );
-            
+
+            if (!mounted) return;
             if (uploadResponse['status'] == 'success') {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Pemesanan & bukti pembayaran berhasil diupload! Menunggu verifikasi.'),
+                  content: Text(
+                      'Pemesanan & bukti pembayaran berhasil diupload! Menunggu verifikasi.'),
                   backgroundColor: AppConstants.successColor,
                 ),
               );
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Pemesanan berhasil, tapi gagal upload bukti: ${uploadResponse['message']}'),
+                  content: Text(
+                      'Pemesanan berhasil, tapi gagal upload bukti: ${uploadResponse['message']}'),
                   backgroundColor: AppConstants.warningColor,
                 ),
               );
             }
           } else {
+            if (!mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(response['message'] ?? 'Pemesanan berhasil dibuat!'),
+                content:
+                    Text(response['message'] ?? 'Pemesanan berhasil dibuat!'),
                 backgroundColor: AppConstants.successColor,
               ),
             );
           }
-          
+
           // Reset state
           _clearBuktiPembayaran();
           _uploadBuktiSekarang = false;
@@ -241,7 +248,7 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
               child: (!widget.kos.hasImage)
                   ? Icon(Icons.apartment,
                       size: 80,
-                      color: AppConstants.primaryColor.withOpacity(0.7))
+                      color: AppConstants.primaryColor.withValues(alpha: 0.7))
                   : null,
             ),
             const SizedBox(height: AppConstants.defaultPadding),
@@ -436,7 +443,8 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppConstants.primaryColor.withOpacity(0.1),
+                              color: AppConstants.primaryColor
+                                  .withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(
@@ -481,13 +489,14 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              AppConstants.primaryColor.withOpacity(0.1),
-                              AppConstants.accentColor.withOpacity(0.05),
+                              AppConstants.primaryColor.withValues(alpha: 0.1),
+                              AppConstants.accentColor.withValues(alpha: 0.05),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: AppConstants.primaryColor.withOpacity(0.2),
+                            color: AppConstants.primaryColor
+                                .withValues(alpha: 0.2),
                           ),
                         ),
                         child: Row(
@@ -535,12 +544,15 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: _uploadBuktiSekarang ? Colors.grey[100] : Colors.grey[50],
+                            color: _uploadBuktiSekarang
+                                ? Colors.grey[100]
+                                : Colors.grey[50],
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: _selectedTanggalMulai == null
                                   ? Colors.grey[300]!
-                                  : AppConstants.successColor.withOpacity(0.5),
+                                  : AppConstants.successColor
+                                      .withValues(alpha: 0.5),
                               width: 1.5,
                             ),
                           ),
@@ -552,7 +564,7 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                                   color: _selectedTanggalMulai == null
                                       ? Colors.grey[200]
                                       : AppConstants.successColor
-                                          .withOpacity(0.1),
+                                          .withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Icon(
@@ -618,7 +630,7 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
                                     color: AppConstants.accentColor
-                                        .withOpacity(0.1),
+                                        .withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: const Icon(
@@ -643,7 +655,8 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                               decoration: BoxDecoration(
                                 color: _uploadBuktiSekarang
                                     ? Colors.grey[200]
-                                    : AppConstants.primaryColor.withOpacity(0.1),
+                                    : AppConstants.primaryColor
+                                        .withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: DropdownButtonHideUnderline(
@@ -700,7 +713,8 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: AppConstants.primaryColor.withOpacity(0.3),
+                              color: AppConstants.primaryColor
+                                  .withValues(alpha: 0.3),
                               blurRadius: 12,
                               offset: const Offset(0, 4),
                             ),
@@ -760,7 +774,7 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
                                     color: AppConstants.successColor
-                                        .withOpacity(0.1),
+                                        .withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: const Icon(
@@ -801,27 +815,28 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                                     horizontal: 12, vertical: 8),
                                 decoration: BoxDecoration(
                                   color: AppConstants.warningColor
-                                      .withOpacity(0.1),
+                                      .withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
                                     color: AppConstants.warningColor
-                                        .withOpacity(0.3),
+                                        .withValues(alpha: 0.3),
                                   ),
                                 ),
-                                child: Row(
+                                child: const Row(
                                   children: [
                                     Icon(
                                       Icons.info_outline_rounded,
                                       size: 16,
                                       color: AppConstants.warningColor,
                                     ),
-                                    const SizedBox(width: 8),
-                                    const Expanded(
+                                    SizedBox(width: 8),
+                                    Expanded(
                                       child: Text(
                                         'Tanggal dan durasi sewa tidak dapat diubah saat mode pembayaran aktif',
                                         style: TextStyle(
                                           fontSize: 11,
-                                          color: AppConstants.textColorSecondary,
+                                          color:
+                                              AppConstants.textColorSecondary,
                                         ),
                                       ),
                                     ),
@@ -837,7 +852,7 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                                 ),
                               ),
                               const SizedBox(height: 16),
-                              
+
                               // Metode Pembayaran
                               const Text(
                                 'Metode Pembayaran',
@@ -875,7 +890,8 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                                       ),
                                       DropdownMenuItem(
                                         value: 'E-Wallet',
-                                        child: Text('E-Wallet (GoPay, OVO, dll)'),
+                                        child:
+                                            Text('E-Wallet (GoPay, OVO, dll)'),
                                       ),
                                       DropdownMenuItem(
                                         value: 'QRIS',
@@ -912,7 +928,7 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                                         borderRadius: BorderRadius.circular(12),
                                         border: Border.all(
                                           color: AppConstants.successColor
-                                              .withOpacity(0.5),
+                                              .withValues(alpha: 0.5),
                                           width: 2,
                                         ),
                                       ),
@@ -941,7 +957,7 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                                             boxShadow: [
                                               BoxShadow(
                                                 color: Colors.black
-                                                    .withOpacity(0.2),
+                                                    .withValues(alpha: 0.2),
                                                 blurRadius: 4,
                                               ),
                                             ],
@@ -1013,7 +1029,7 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                                           padding: const EdgeInsets.all(12),
                                           decoration: BoxDecoration(
                                             color: AppConstants.primaryColor
-                                                .withOpacity(0.1),
+                                                .withValues(alpha: 0.1),
                                             shape: BoxShape.circle,
                                           ),
                                           child: const Icon(
@@ -1055,7 +1071,9 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                         children: [
                           Expanded(
                             child: OutlinedButton(
-                              onPressed: _isLoading ? null : () => Navigator.pop(context),
+                              onPressed: _isLoading
+                                  ? null
+                                  : () => Navigator.pop(context),
                               style: OutlinedButton.styleFrom(
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 16),
@@ -1078,15 +1096,18 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                           Expanded(
                             flex: 2,
                             child: ElevatedButton(
-                              onPressed: (_selectedTanggalMulai == null || _isLoading || (_uploadBuktiSekarang && _buktiPembayaranFile == null))
+                              onPressed: (_selectedTanggalMulai == null ||
+                                      _isLoading ||
+                                      (_uploadBuktiSekarang &&
+                                          _buktiPembayaranFile == null))
                                   ? null
                                   : () {
                                       setStateInDialog(() {});
                                       _createBooking();
                                     },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: _uploadBuktiSekarang 
-                                    ? AppConstants.successColor 
+                                backgroundColor: _uploadBuktiSekarang
+                                    ? AppConstants.successColor
                                     : AppConstants.primaryColor,
                                 disabledBackgroundColor: Colors.grey[300],
                                 padding:
@@ -1102,22 +1123,26 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                                       height: 20,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                Colors.white),
                                       ),
                                     )
                                   : Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Icon(
-                                          _uploadBuktiSekarang 
+                                          _uploadBuktiSekarang
                                               ? Icons.payment_rounded
-                                              : Icons.check_circle_outline_rounded,
+                                              : Icons
+                                                  .check_circle_outline_rounded,
                                           size: 20,
                                           color: Colors.white,
                                         ),
                                         const SizedBox(width: 8),
                                         Text(
-                                          _uploadBuktiSekarang 
+                                          _uploadBuktiSekarang
                                               ? 'Pesan & Bayar'
                                               : 'Konfirmasi Pesanan',
                                           style: const TextStyle(
@@ -1128,8 +1153,6 @@ class _KosDetailScreenState extends State<KosDetailScreen> {
                                         ),
                                       ],
                                     ),
-                                ],
-                              ),
                             ),
                           ),
                         ],

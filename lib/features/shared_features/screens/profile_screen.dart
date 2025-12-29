@@ -87,7 +87,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     namaLengkap: namaLengkapController.text,
                     noTelepon: noTeleponController.text,
                   );
-                  if (mounted) Navigator.pop(context); // Tutup dialog
+                  if (!context.mounted) return;
+                  Navigator.pop(context); // Tutup dialog
                 }
               },
               child: const Text('Simpan'),

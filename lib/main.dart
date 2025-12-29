@@ -210,7 +210,7 @@ class _SplashScreenState extends State<SplashScreen>
                               color: Colors.white,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
+                                  color: Colors.black.withValues(alpha: 0.2),
                                   blurRadius: 20,
                                   spreadRadius: 5,
                                 ),
@@ -244,7 +244,7 @@ class _SplashScreenState extends State<SplashScreen>
                                 color: Colors.white,
                                 shadows: [
                                   Shadow(
-                                    color: Colors.black.withOpacity(0.3),
+                                    color: Colors.black.withValues(alpha: 0.3),
                                     blurRadius: 10,
                                     offset: const Offset(0, 5),
                                   ),
@@ -265,12 +265,12 @@ class _SplashScreenState extends State<SplashScreen>
                     opacity: _textFadeAnimation,
                     child: SlideTransition(
                       position: _textSlideAnimation,
-                      child: Column(
+                      child: const Column(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
                           Row(
                             mainAxisSize: MainAxisSize.min,
-                            children: const <Widget>[
+                            children: <Widget>[
                               Text(
                                 'Sewa',
                                 style: TextStyle(
@@ -291,10 +291,10 @@ class _SplashScreenState extends State<SplashScreen>
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8),
                           Text(
                             AppConstants.slogan,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               color: Colors.white,
                               fontStyle: FontStyle.italic,
