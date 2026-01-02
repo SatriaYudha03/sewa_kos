@@ -7,6 +7,7 @@ import 'package:sewa_kos/core/models/pemesanan_model.dart';
 import 'package:sewa_kos/core/models/pembayaran_model.dart';
 import 'package:sewa_kos/core/services/pemesanan_service.dart';
 import 'package:sewa_kos/core/services/pembayaran_service.dart';
+import 'package:sewa_kos/features/owner_dashboard/screens/payment_verification_screen.dart';
 
 class IncomingBookingsScreen extends StatefulWidget {
   const IncomingBookingsScreen({super.key});
@@ -111,192 +112,17 @@ class _IncomingBookingsScreenState extends State<IncomingBookingsScreen> {
     }
   }
 
-  /// Menampilkan dialog verifikasi pembayaran
-  Future<void> _showPaymentVerificationDialog(Pemesanan pemesanan) async {
-    List<Pembayaran> payments = [];
-    bool isLoadingPayments = true;
-
-    try {
-      payments =
-          await _pembayaranService.getPaymentsByPemesananId(pemesanan.id);
-    } catch (e) {
-      debugPrint('Error fetching payment details: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Gagal memuat detail pembayaran: ${e.toString()}'),
-              backgroundColor: AppConstants.errorColor),
-        );
-      }
-    } finally {
-      isLoadingPayments = false;
-    }
-
-    if (!mounted) return;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Verifikasi Pembayaran'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Pemesanan ID: ${pemesanan.id}'),
-                Text(
-                    'Penyewa: ${pemesanan.tenantName ?? pemesanan.tenantUsername}'),
-                Text(
-                    'Total Pesanan: Rp ${pemesanan.totalHarga.toStringAsFixed(0)}'),
-                const Divider(),
-                const Text('Riwayat Pembayaran:',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                isLoadingPayments
-                    ? const Center(child: CircularProgressIndicator())
-                    : (payments.isEmpty
-                        ? const Text('Belum ada bukti pembayaran diunggah.')
-                        : Column(
-                            children: payments.map((payment) {
-                              return _buildPaymentCard(payment);
-                            }).toList(),
-                          )),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Tutup'),
-            ),
-            if (payments.any((p) =>
-                p.statusPembayaran == StatusPembayaran.menungguVerifikasi))
-              ElevatedButton(
-                onPressed: () async {
-                  final pendingPayment = payments.firstWhere((p) =>
-                      p.statusPembayaran ==
-                      StatusPembayaran.menungguVerifikasi);
-                  await _verifyPaymentStatus(
-                      pendingPayment.id, StatusPembayaran.terverifikasi);
-                  if (mounted) Navigator.of(context).pop();
-                  _fetchIncomingBookings();
-                },
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: AppConstants.successColor),
-                child: const Text('Verifikasi Pembayaran',
-                    style: TextStyle(color: Colors.white)),
-              ),
-            if (payments.any((p) =>
-                p.statusPembayaran == StatusPembayaran.menungguVerifikasi))
-              ElevatedButton(
-                onPressed: () async {
-                  final pendingPayment = payments.firstWhere((p) =>
-                      p.statusPembayaran ==
-                      StatusPembayaran.menungguVerifikasi);
-                  await _verifyPaymentStatus(
-                      pendingPayment.id, StatusPembayaran.gagal);
-                  if (mounted) Navigator.of(context).pop();
-                  _fetchIncomingBookings();
-                },
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: AppConstants.errorColor),
-                child: const Text('Tolak Pembayaran',
-                    style: TextStyle(color: Colors.white)),
-              ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildPaymentCard(Pembayaran payment) {
-    Widget imageWidget;
-    if (payment.hasBuktiTransfer && payment.buktiTransferUrl != null) {
-      imageWidget = Image.network(
-        payment.buktiTransferUrl!,
-        height: 100,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) =>
-            const Icon(Icons.broken_image, size: 50),
-      );
-    } else {
-      imageWidget = const SizedBox.shrink();
-    }
-
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Jumlah: Rp ${payment.jumlahBayar.toStringAsFixed(0)}'),
-            Text('Metode: ${payment.metodePembayaran ?? '-'}'),
-            Text(
-                'Tanggal: ${payment.tanggalPembayaran?.toLocal().toString().split(' ')[0] ?? '-'}'),
-            Text(
-              'Status: ${payment.statusPembayaran.displayName}',
-              style: TextStyle(
-                color: _getPaymentStatusColor(payment.statusPembayaran),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            if (payment.hasBuktiTransfer) ...[
-              const SizedBox(height: 8),
-              imageWidget,
-              TextButton.icon(
-                icon: const Icon(Icons.open_in_new),
-                label: const Text('Lihat Gambar Penuh'),
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text(
-                            'Fitur lihat gambar penuh akan segera hadir!')),
-                  );
-                },
-              ),
-            ],
-          ],
-        ),
+  /// Navigasi ke halaman verifikasi pembayaran
+  Future<void> _navigateToPaymentVerification(Pemesanan pemesanan) async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => PaymentVerificationScreen(pemesanan: pemesanan),
       ),
     );
-  }
 
-  Future<void> _verifyPaymentStatus(
-      int pembayaranId, StatusPembayaran newStatus) async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text('Memverifikasi pembayaran...'),
-          duration: Duration(seconds: 1)),
-    );
-    try {
-      final response = await _pembayaranService.verifyPayment(
-        pembayaranId: pembayaranId,
-        status: newStatus,
-      );
-      if (mounted) {
-        if (response['status'] == 'success') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text(response['message'] ?? 'Verifikasi berhasil.'),
-                backgroundColor: AppConstants.successColor),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text(response['message'] ?? 'Verifikasi gagal.'),
-                backgroundColor: AppConstants.errorColor),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Error: ${e.toString()}'),
-              backgroundColor: AppConstants.errorColor),
-        );
-      }
+    // Jika ada perubahan (result == true), refresh data
+    if (result == true) {
+      _fetchIncomingBookings();
     }
   }
 
@@ -407,7 +233,7 @@ class _IncomingBookingsScreenState extends State<IncomingBookingsScreen> {
               IconButton(
                 icon:
                     const Icon(Icons.payment, color: AppConstants.primaryColor),
-                onPressed: () => _showPaymentVerificationDialog(pemesanan),
+                onPressed: () => _navigateToPaymentVerification(pemesanan),
                 tooltip: 'Verifikasi Pembayaran',
               ),
             if (pemesanan.statusPemesanan == StatusPemesanan.menungguPembayaran)
