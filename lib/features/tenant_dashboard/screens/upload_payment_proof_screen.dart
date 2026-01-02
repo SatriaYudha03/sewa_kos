@@ -1,4 +1,5 @@
 // lib/features/tenant_dashboard/screens/upload_payment_proof_screen.dart (DIUPDATE)
+import 'dart:developer' as developer;
 import 'dart:typed_data'; // Untuk Uint8List
 
 import 'package:flutter/material.dart';
@@ -48,56 +49,145 @@ class _UploadPaymentProofScreenState extends State<UploadPaymentProofScreen> {
 
   // Fungsi untuk memilih gambar dari galeri
   Future<void> _pickImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      final bytes = await image.readAsBytes();
-      setState(() {
-        _pickedImageFile = image;
-        _pickedImageBytes = bytes;
-      });
+    try {
+      developer.log('🖼️ Memulai proses pemilihan gambar...',
+          name: 'UploadPaymentProof');
+
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+
+      if (image != null) {
+        developer.log('✅ Gambar dipilih: ${image.name}, Path: ${image.path}',
+            name: 'UploadPaymentProof');
+
+        final bytes = await image.readAsBytes();
+        developer.log(
+            '✅ Berhasil membaca bytes gambar. Ukuran: ${bytes.length} bytes (${(bytes.length / 1024).toStringAsFixed(2)} KB)',
+            name: 'UploadPaymentProof');
+
+        setState(() {
+          _pickedImageFile = image;
+          _pickedImageBytes = bytes;
+        });
+      } else {
+        developer.log('❌ Tidak ada gambar yang dipilih (dibatalkan)',
+            name: 'UploadPaymentProof');
+      }
+    } catch (e, stackTrace) {
+      developer.log(
+        '❌ ERROR saat memilih gambar',
+        name: 'UploadPaymentProof',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error memilih gambar: ${e.toString()}'),
+            backgroundColor: AppConstants.errorColor,
+          ),
+        );
+      }
     }
   }
 
   // Fungsi untuk mengunggah bukti pembayaran
   Future<void> _uploadProof() async {
+    developer.log('\n═══════════════════════════════════════',
+        name: 'UploadPaymentProof');
+    developer.log('🚀 MEMULAI PROSES UPLOAD BUKTI PEMBAYARAN',
+        name: 'UploadPaymentProof');
+    developer.log('═══════════════════════════════════════',
+        name: 'UploadPaymentProof');
+
+    // Validasi file gambar
     if (_pickedImageFile == null) {
+      developer.log('❌ VALIDASI GAGAL: File gambar tidak dipilih',
+          name: 'UploadPaymentProof');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Mohon pilih bukti pembayaran terlebih dahulu.')),
       );
       return;
     }
+    developer.log('✅ File gambar: ${_pickedImageFile!.name}',
+        name: 'UploadPaymentProof');
+    developer.log('   Path: ${_pickedImageFile!.path}',
+        name: 'UploadPaymentProof');
+    developer.log(
+        '   Bytes tersedia: ${_pickedImageBytes != null ? "Ya (${_pickedImageBytes!.length} bytes)" : "Tidak"}',
+        name: 'UploadPaymentProof');
+
+    // Validasi jumlah bayar
     if (_jumlahBayarController.text.isEmpty ||
         double.tryParse(_jumlahBayarController.text) == null) {
+      developer.log(
+          '❌ VALIDASI GAGAL: Jumlah bayar tidak valid: "${_jumlahBayarController.text}"',
+          name: 'UploadPaymentProof');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Mohon masukkan jumlah pembayaran yang valid.')),
       );
       return;
     }
+    final jumlahBayar = double.parse(_jumlahBayarController.text);
+    developer.log('✅ Jumlah bayar: Rp ${jumlahBayar.toStringAsFixed(0)}',
+        name: 'UploadPaymentProof');
+
+    // Validasi metode pembayaran
     if (_selectedMetodePembayaran == null ||
         _selectedMetodePembayaran!.isEmpty) {
+      developer.log('❌ VALIDASI GAGAL: Metode pembayaran tidak dipilih',
+          name: 'UploadPaymentProof');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Mohon pilih metode pembayaran.')),
       );
       return;
     }
+    developer.log('✅ Metode pembayaran: $_selectedMetodePembayaran',
+        name: 'UploadPaymentProof');
+
+    developer.log('\n📦 DATA YANG AKAN DIKIRIM:', name: 'UploadPaymentProof');
+    developer.log('   - Pemesanan ID: ${widget.pemesanan.id}',
+        name: 'UploadPaymentProof');
+    developer.log('   - Jumlah Bayar: Rp ${jumlahBayar.toStringAsFixed(0)}',
+        name: 'UploadPaymentProof');
+    developer.log('   - Metode: $_selectedMetodePembayaran',
+        name: 'UploadPaymentProof');
+    developer.log('   - File: ${_pickedImageFile!.name}',
+        name: 'UploadPaymentProof');
 
     setState(() {
       _isLoading = true;
     });
 
     try {
+      developer.log('\n🌐 Mengirim request ke PembayaranService...',
+          name: 'UploadPaymentProof');
+
       final response = await _pembayaranService.uploadPaymentProof(
         pemesananId: widget.pemesanan.id,
-        jumlahBayar: double.parse(_jumlahBayarController.text),
+        jumlahBayar: jumlahBayar,
         metodePembayaran: _selectedMetodePembayaran!,
         buktiPembayaranFile: _pickedImageFile!,
         buktiPembayaranBytes: _pickedImageBytes, // <-- KIRIM BYTES JUGA DI SINI
       );
 
+      developer.log('✅ Response diterima dari server',
+          name: 'UploadPaymentProof');
+      developer.log('   Status: ${response['status']}',
+          name: 'UploadPaymentProof');
+      developer.log('   Message: ${response['message']}',
+          name: 'UploadPaymentProof');
+      developer.log('   Full response: $response', name: 'UploadPaymentProof');
+
       if (mounted) {
         if (response['status'] == 'success') {
+          developer.log('\n✅ ═════════════════════════════════════',
+              name: 'UploadPaymentProof');
+          developer.log('✅ UPLOAD BERHASIL!', name: 'UploadPaymentProof');
+          developer.log('✅ ═════════════════════════════════════\n',
+              name: 'UploadPaymentProof');
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
                 content: Text(response['message'] ??
@@ -107,6 +197,15 @@ class _UploadPaymentProofScreenState extends State<UploadPaymentProofScreen> {
           widget.onProofUploaded();
           Navigator.pop(context);
         } else {
+          developer.log('\n❌ ═════════════════════════════════════',
+              name: 'UploadPaymentProof');
+          developer.log('❌ UPLOAD GAGAL (Status: ${response['status']})',
+              name: 'UploadPaymentProof');
+          developer.log('❌ Pesan error: ${response['message']}',
+              name: 'UploadPaymentProof');
+          developer.log('❌ ═════════════════════════════════════\n',
+              name: 'UploadPaymentProof');
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
                 content: Text(response['message'] ??
@@ -115,7 +214,22 @@ class _UploadPaymentProofScreenState extends State<UploadPaymentProofScreen> {
           );
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      developer.log(
+        '\n❌ ═════════════════════════════════════',
+        name: 'UploadPaymentProof',
+      );
+      developer.log(
+        '❌ EXCEPTION TERJADI SAAT UPLOAD',
+        name: 'UploadPaymentProof',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      developer.log(
+        '❌ ═════════════════════════════════════\n',
+        name: 'UploadPaymentProof',
+      );
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

@@ -34,5 +34,5 @@ class SupabaseConfig {
   /// Nama-nama bucket storage
   static const String kosImagesBucket = 'kos-images';
   static const String kamarImagesBucket = 'kamar-images';
-  static const String buktiTransferBucket = 'bukti-transfer';
+  static const String buktiTransferBucket = 'bukti-pembayaran';
 }

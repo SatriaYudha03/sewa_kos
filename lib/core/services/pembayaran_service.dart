@@ -3,6 +3,7 @@
 /// Mengelola upload bukti pembayaran dan verifikasi pembayaran
 library;
 
+import 'dart:developer' as developer;
 import 'dart:typed_data';
 
 import 'package:image_picker/image_picker.dart';
@@ -25,15 +26,36 @@ class PembayaranService {
     String? jenisPembayaran,
   }) async {
     try {
+      developer.log('\n🔧 [PembayaranService] uploadPaymentProof dipanggil',
+          name: 'PembayaranService');
+      developer.log('   Pemesanan ID: $pemesananId', name: 'PembayaranService');
+      developer.log('   Jumlah Bayar: Rp ${jumlahBayar.toStringAsFixed(0)}',
+          name: 'PembayaranService');
+      developer.log('   Metode: $metodePembayaran', name: 'PembayaranService');
+      developer.log('   Jenis: ${jenisPembayaran ?? "null"}',
+          name: 'PembayaranService');
+      developer.log('   File: ${buktiPembayaranFile.name}',
+          name: 'PembayaranService');
+      developer.log('   Bytes tersedia: ${buktiPembayaranBytes != null}',
+          name: 'PembayaranService');
+
+      // Cek autentikasi
+      developer.log('\n🔐 Memeriksa autentikasi user...',
+          name: 'PembayaranService');
       final currentUser = await _authService.getLoggedInUser();
       if (currentUser == null) {
+        developer.log('❌ User tidak terautentikasi', name: 'PembayaranService');
         return {
           'status': 'error',
           'message': 'Silakan login terlebih dahulu.',
         };
       }
+      developer.log('✅ User terautentikasi: ${currentUser.username}',
+          name: 'PembayaranService');
 
       // Upload bukti transfer ke Storage
+      developer.log('\n📤 Memulai upload bukti transfer ke Storage...',
+          name: 'PembayaranService');
       final buktiTransferUrl = await _uploadBuktiTransfer(
         pemesananId: pemesananId,
         file: buktiPembayaranFile,
@@ -41,36 +63,56 @@ class PembayaranService {
       );
 
       if (buktiTransferUrl == null) {
+        developer.log('❌ Upload bukti transfer gagal (URL null)',
+            name: 'PembayaranService');
         return {
           'status': 'error',
           'message': 'Gagal mengupload bukti transfer.',
         };
       }
+      developer.log('✅ Bukti transfer berhasil diupload',
+          name: 'PembayaranService');
+      developer.log('   URL: $buktiTransferUrl', name: 'PembayaranService');
 
       // Insert data pembayaran
+      developer.log('\n💾 Menyimpan data pembayaran ke database...',
+          name: 'PembayaranService');
+      final dataToInsert = {
+        'pemesanan_id': pemesananId,
+        'jumlah_bayar': jumlahBayar,
+        'jenis_pembayaran': jenisPembayaran,
+        'metode_pembayaran': metodePembayaran,
+        'status_pembayaran': StatusPembayaran.menungguVerifikasi.toDbString(),
+        'bukti_transfer_url': buktiTransferUrl,
+      };
+      developer.log('   Data yang akan diinsert: $dataToInsert',
+          name: 'PembayaranService');
+
       final response = await SupabaseConfig.client
           .from(SupabaseConfig.detailPembayaranTable)
-          .insert({
-            'pemesanan_id': pemesananId,
-            'jumlah_bayar': jumlahBayar,
-            'jenis_pembayaran': jenisPembayaran,
-            'metode_pembayaran': metodePembayaran,
-            'status_pembayaran':
-                StatusPembayaran.menungguVerifikasi.toDbString(),
-            'bukti_transfer_url': buktiTransferUrl,
-          })
+          .insert(dataToInsert)
           .select()
           .single();
+
+      developer.log('✅ Data pembayaran berhasil disimpan',
+          name: 'PembayaranService');
+      developer.log('   Response: $response', name: 'PembayaranService');
 
       return {
         'status': 'success',
         'message': 'Bukti pembayaran berhasil diupload. Menunggu verifikasi.',
         'data': Pembayaran.fromJson(response),
       };
-    } catch (e) {
+    } catch (e, stackTrace) {
+      developer.log(
+        '❌ EXCEPTION di uploadPaymentProof',
+        name: 'PembayaranService',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return {
         'status': 'error',
-        'message': 'Gagal mengupload bukti pembayaran. Silakan coba lagi.',
+        'message': 'Gagal mengupload bukti pembayaran: ${e.toString()}',
       };
     }
   }
@@ -84,22 +126,48 @@ class PembayaranService {
     try {
       final fileName =
           'bukti_${pemesananId}_${DateTime.now().millisecondsSinceEpoch}.${file.name.split('.').last}';
+      developer.log('\n📁 [Storage] Menyiapkan upload file',
+          name: 'PembayaranService');
+      developer.log('   Nama file: $fileName', name: 'PembayaranService');
+      developer.log('   Bucket: ${SupabaseConfig.buktiTransferBucket}',
+          name: 'PembayaranService');
 
       Uint8List fileBytes;
       if (bytes != null) {
+        developer.log('   Menggunakan bytes yang sudah ada',
+            name: 'PembayaranService');
         fileBytes = bytes;
       } else {
+        developer.log('   Membaca bytes dari file...',
+            name: 'PembayaranService');
         fileBytes = await file.readAsBytes();
       }
+      developer.log(
+          '   Ukuran file: ${fileBytes.length} bytes (${(fileBytes.length / 1024).toStringAsFixed(2)} KB)',
+          name: 'PembayaranService');
 
+      developer.log('   Mengirim file ke Supabase Storage...',
+          name: 'PembayaranService');
       await SupabaseConfig.client.storage
           .from(SupabaseConfig.buktiTransferBucket)
           .uploadBinary(fileName, fileBytes);
+      developer.log('✅ File berhasil diupload ke storage',
+          name: 'PembayaranService');
 
-      return SupabaseConfig.client.storage
+      final publicUrl = SupabaseConfig.client.storage
           .from(SupabaseConfig.buktiTransferBucket)
           .getPublicUrl(fileName);
-    } catch (e) {
+      developer.log('✅ Public URL didapatkan: $publicUrl',
+          name: 'PembayaranService');
+
+      return publicUrl;
+    } catch (e, stackTrace) {
+      developer.log(
+        '❌ EXCEPTION di _uploadBuktiTransfer',
+        name: 'PembayaranService',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return null;
     }
   }
