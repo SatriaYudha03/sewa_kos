@@ -133,7 +133,18 @@ lib/
    flutter pub get
    ```
 
-3. **Konfigurasi Supabase**
+3. **Setup Database Supabase**
+
+   1. Buat project Supabase baru.
+   2. Buka menu **SQL** → **SQL Editor**.
+   3. Jalankan isi file [`database/schema.sql`](database/schema.sql) untuk membuat tabel utama.
+   4. Pastikan Anda sudah membuat bucket storage:
+      - `kos-images` (untuk gambar kos & kamar)
+      - `bukti-pembayaran` (untuk bukti pembayaran)
+   5. Jalankan isi file [`database/rls_policies.sql`](database/rls_policies.sql) untuk mengaktifkan RLS pada bucket tersebut.
+   6. Sesuaikan kembali policy jika ingin pembatasan akses yang lebih ketat (misalnya hanya user tertentu yang bisa upload/delete).
+
+4. **Konfigurasi Supabase di aplikasi**
 
    Buat file `lib/core/config/supabase_config.dart`:
 
@@ -144,7 +155,7 @@ lib/
    }
    ```
 
-4. **Jalankan aplikasi**
+5. **Jalankan aplikasi**
 
    ```bash
    # Untuk development
