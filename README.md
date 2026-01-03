@@ -13,6 +13,20 @@ Aplikasi mobile untuk pencarian dan pengelolaan kos-kosan berbasis Flutter denga
 
 Sewa Kos adalah aplikasi yang menghubungkan pemilik kos dengan pencari kos. Aplikasi ini memudahkan proses pencarian, pemesanan, dan pengelolaan properti kos-kosan dengan fitur lengkap untuk dua jenis pengguna: **Pemilik Kos (Owner)** dan **Pencari Kos (Tenant)**.
 
+## 📱 Preview
+
+### Login & Register
+
+https://github.com/user-attachments/assets/8c33c1ca-de90-4b5c-ba4c-b7ff9bb82298
+
+### Penyewa Kos
+
+https://github.com/user-attachments/assets/fbf34f2b-f453-45ee-acd5-55bb31f74951
+
+### Pemilik Kos
+
+https://github.com/user-attachments/assets/716b22f6-2cec-4b8a-8d70-eb383d45327c
+
 ## ✨ Fitur Utama
 
 ### 🔐 Autentikasi
@@ -44,7 +58,6 @@ Sewa Kos adalah aplikasi yang menghubungkan pemilik kos dengan pencari kos. Apli
 | **Flutter**           | Framework UI cross-platform                    |
 | **Dart**              | Bahasa pemrograman                             |
 | **Supabase**          | Backend-as-a-Service (Auth, Database, Storage) |
-| **SharedPreferences** | Local storage untuk data sesi                  |
 
 ## 📁 Struktur Proyek
 
@@ -159,39 +172,9 @@ lib/
    flutter build ios
    ```
 
-## 📱 Screenshot
-
-> _Tambahkan screenshot aplikasi di sini_
-
-## 🔧 Dependencies
-
-```yaml
-dependencies:
-  flutter: sdk
-  supabase_flutter: ^2.5.2 # Backend Supabase
-  shared_preferences: ^2.2.3 # Local storage
-  file_picker: ^8.0.0 # File picker
-  url_launcher: ^6.2.6 # URL launcher
-  image_picker: ^1.1.2 # Image picker
-  intl: ^0.19.0 # Internationalization
-  crypto: ^3.0.3 # Cryptography
-  cupertino_icons: ^1.0.8 # iOS style icons
-```
-
-## 🎨 Desain
-
-- **Warna Primer**: Blue (#2196F3)
-- **Warna Aksen**: Cyan (#00BCD4)
-- **Border Radius**: 12px (default)
-- **Font**: Material Design default
-
 ## 📄 Lisensi
 
 Proyek ini bersifat **private** dan tidak dipublikasikan ke pub.dev.
-
-## 👨‍💻 Kontributor
-
-- Developer Team Sewa Kos
 
 ---
 
