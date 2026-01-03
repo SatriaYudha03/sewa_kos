@@ -19,7 +19,7 @@ class AppConstants {
   static const Color accentColor = Color(0xFF00BCD4); // Cyan
   static const Color successColor = Color(0xFF4CAF50); // Green
   static const Color errorColor = Color(0xFFF44336); // Red
-  static const Color warningColor = Color(0xFFFF9800); // Orange
+  static const Color warningColor = Color(0xFF81D4FA); // Light Blue
   static const Color textColorPrimary = Color(0xFF212121);
   static const Color textColorSecondary = Color(0xFF757575);
 

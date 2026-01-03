@@ -51,11 +51,9 @@ Sewa Kos adalah aplikasi yang menghubungkan pemilik kos dengan pencari kos. Apli
 ```
 lib/
 ├── main.dart                    # Entry point aplikasi
-├── app_constants.dart           # Konstanta global
-├── app_routes.dart              # Konfigurasi routing
 ├── core/
 │   ├── config/                  # Konfigurasi (Supabase, dll)
-│   ├── constants/               # Konstanta aplikasi
+│   ├── constants/               # Konstanta aplikasi (app_constants.dart)
 │   ├── models/                  # Model data
 │   │   ├── user_model.dart
 │   │   ├── kos_model.dart
