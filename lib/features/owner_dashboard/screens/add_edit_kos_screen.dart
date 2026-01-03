@@ -120,7 +120,7 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppConstants.primaryColor.withOpacity(0.1),
+              color: AppConstants.primaryColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -189,14 +189,6 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
     String? fotoUtamaBase64;
     if (_imageBytes != null) {
       fotoUtamaBase64 = base64Encode(_imageBytes!);
-      print('=== DEBUG ADD/EDIT KOS ===');
-      print('Image bytes length: ${_imageBytes!.length}');
-      print('Base64 length: ${fotoUtamaBase64.length}');
-      print(
-          'Base64 preview (first 100 chars): ${fotoUtamaBase64.substring(0, fotoUtamaBase64.length > 100 ? 100 : fotoUtamaBase64.length)}');
-    } else {
-      print('=== DEBUG ADD/EDIT KOS ===');
-      print('No image selected (_imageBytes is null)');
     }
     // Jika _imageFile null, artinya user tidak memilih gambar baru.
     // Jika ini mode edit dan _imageFile null, kita tidak akan mengubah gambar.
@@ -211,13 +203,6 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
     try {
       if (widget.kos == null) {
         // Mode Tambah Kos Baru
-        print('=== CALLING addKos ===');
-        print('namaKos: ${_namaKosController.text}');
-        print('alamat: ${_alamatController.text}');
-        print('deskripsi: ${_deskripsiController.text}');
-        print('fotoUtama length: ${fotoUtamaBase64?.length ?? 0}');
-        print('fasilitasUmum: ${_fasilitasUmumController.text}');
-
         response = await kosService.addKos(
           namaKos: _namaKosController.text,
           alamat: _alamatController.text,
@@ -288,7 +273,7 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppConstants.primaryColor.withOpacity(0.1),
+              color: AppConstants.primaryColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -320,7 +305,7 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
           color: Colors.grey[50],
           borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
           border: Border.all(
-            color: AppConstants.primaryColor.withOpacity(0.3),
+            color: AppConstants.primaryColor.withValues(alpha: 0.3),
             width: 2,
             style: BorderStyle.solid,
           ),
@@ -341,7 +326,7 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.6),
+                          color: Colors.black.withValues(alpha: 0.6),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: const Icon(
@@ -373,7 +358,7 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.6),
+                              color: Colors.black.withValues(alpha: 0.6),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: const Icon(
@@ -398,13 +383,13 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppConstants.primaryColor.withOpacity(0.1),
+            color: AppConstants.primaryColor.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(
             Icons.add_photo_alternate_outlined,
             size: 40,
-            color: AppConstants.primaryColor.withOpacity(0.7),
+            color: AppConstants.primaryColor.withValues(alpha: 0.7),
           ),
         ),
         const SizedBox(height: 12),
@@ -420,7 +405,7 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
         Text(
           'Format: JPG, PNG (Max 2MB)',
           style: TextStyle(
-            color: AppConstants.textColorSecondary.withOpacity(0.7),
+            color: AppConstants.textColorSecondary.withValues(alpha: 0.7),
             fontSize: 12,
           ),
         ),
@@ -521,7 +506,7 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
                           // Card Informasi Dasar
                           Card(
                             elevation: 2,
-                            shadowColor: Colors.black.withOpacity(0.1),
+                            shadowColor: Colors.black.withValues(alpha: 0.1),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(
                                   AppConstants.largeBorderRadius),
@@ -573,7 +558,7 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
                           // Card Foto Utama
                           Card(
                             elevation: 2,
-                            shadowColor: Colors.black.withOpacity(0.1),
+                            shadowColor: Colors.black.withValues(alpha: 0.1),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(
                                   AppConstants.largeBorderRadius),
@@ -596,7 +581,7 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
                           // Card Deskripsi & Fasilitas
                           Card(
                             elevation: 2,
-                            shadowColor: Colors.black.withOpacity(0.1),
+                            shadowColor: Colors.black.withValues(alpha: 0.1),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(
                                   AppConstants.largeBorderRadius),
@@ -635,7 +620,7 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
                                         Icons.info_outline,
                                         size: 14,
                                         color: AppConstants.textColorSecondary
-                                            .withOpacity(0.7),
+                                            .withValues(alpha: 0.7),
                                       ),
                                       const SizedBox(width: 6),
                                       Text(
@@ -643,7 +628,7 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
                                         style: TextStyle(
                                           fontSize: 12,
                                           color: AppConstants.textColorSecondary
-                                              .withOpacity(0.7),
+                                              .withValues(alpha: 0.7),
                                         ),
                                       ),
                                     ],
@@ -670,7 +655,7 @@ class _AddEditKosScreenState extends State<AddEditKosScreen> {
                               boxShadow: [
                                 BoxShadow(
                                   color: AppConstants.primaryColor
-                                      .withOpacity(0.4),
+                                      .withValues(alpha: 0.4),
                                   blurRadius: 12,
                                   offset: const Offset(0, 6),
                                 ),

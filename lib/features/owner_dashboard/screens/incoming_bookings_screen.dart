@@ -4,9 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:sewa_kos/core/constants/app_constants.dart';
 import 'package:sewa_kos/core/models/pemesanan_model.dart';
-import 'package:sewa_kos/core/models/pembayaran_model.dart';
 import 'package:sewa_kos/core/services/pemesanan_service.dart';
-import 'package:sewa_kos/core/services/pembayaran_service.dart';
 import 'package:sewa_kos/features/owner_dashboard/screens/payment_verification_screen.dart';
 
 class IncomingBookingsScreen extends StatefulWidget {
@@ -18,7 +16,6 @@ class IncomingBookingsScreen extends StatefulWidget {
 
 class _IncomingBookingsScreenState extends State<IncomingBookingsScreen> {
   final PemesananService _pemesananService = PemesananService();
-  final PembayaranService _pembayaranService = PembayaranService();
   Future<List<Pemesanan>>? _incomingBookingsFuture;
 
   @override
@@ -70,7 +67,8 @@ class _IncomingBookingsScreenState extends State<IncomingBookingsScreen> {
       },
     );
 
-    if (confirm == true) {
+    if (confirm == true && mounted) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content:
@@ -275,17 +273,6 @@ class _IncomingBookingsScreenState extends State<IncomingBookingsScreen> {
         return Colors.red;
       case StatusPemesanan.selesai:
         return Colors.grey;
-    }
-  }
-
-  Color _getPaymentStatusColor(StatusPembayaran status) {
-    switch (status) {
-      case StatusPembayaran.menungguVerifikasi:
-        return Colors.orange;
-      case StatusPembayaran.terverifikasi:
-        return Colors.green;
-      case StatusPembayaran.gagal:
-        return Colors.red;
     }
   }
 }

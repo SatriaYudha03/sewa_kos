@@ -152,6 +152,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             debugPrint(' Updated no_telepon: ${_displayUser.noTelepon}');
           }
 
+          if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
                 content:
@@ -160,6 +161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           );
         } else {
           debugPrint('Update failed: ${response['message']}');
+          if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
                 content:

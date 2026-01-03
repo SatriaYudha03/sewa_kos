@@ -21,7 +21,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   final PemesananService _pemesananService = PemesananService();
   final PembayaranService _pembayaranService = PembayaranService();
   Future<List<Pemesanan>>? _bookingHistoryFuture;
-  Map<int, List<Pembayaran>> _pembayaranMap =
+  final Map<int, List<Pembayaran>> _pembayaranMap =
       {}; // Map pemesananId -> List<Pembayaran>
 
   @override

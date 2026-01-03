@@ -23,34 +23,19 @@ class KosService {
     String? fotoUtama, // base64 string
   }) async {
     try {
-      print('=== KosService.addKos START ===');
-      print('namaKos: $namaKos');
-      print('alamat: $alamat');
-      print('deskripsi: $deskripsi');
-      print('fasilitasUmum: $fasilitasUmum');
-      print('fotoUtama provided: ${fotoUtama != null}');
-      print('fotoUtama length: ${fotoUtama?.length ?? 0}');
-
       final currentUser = await _authService.getLoggedInUser();
       if (currentUser == null) {
-        print('ERROR: No logged in user');
         return {'status': 'error', 'message': 'Silakan login terlebih dahulu.'};
       }
-
-      print('Current user ID: ${currentUser.id}');
 
       String? fotoUtamaUrl;
 
       // Upload foto jika ada
       if (fotoUtama != null && fotoUtama.isNotEmpty) {
-        print('Uploading image to Supabase Storage...');
         fotoUtamaUrl = await _uploadKosImageFromBase64(
           userId: currentUser.id,
           base64Image: fotoUtama,
         );
-        print('Upload result - fotoUtamaUrl: $fotoUtamaUrl');
-      } else {
-        print('No image to upload');
       }
 
       // Insert data kos
@@ -63,17 +48,11 @@ class KosService {
         'fasilitas_umum': fasilitasUmum,
       };
 
-      print('Inserting to Supabase with data:');
-      print(insertData);
-
       final response = await SupabaseConfig.client
           .from(SupabaseConfig.kosTable)
           .insert(insertData)
           .select()
           .single();
-
-      print('Insert successful! Response:');
-      print(response);
 
       return {
         'status': 'success',
@@ -81,9 +60,6 @@ class KosService {
         'data': Kos.fromJson(response),
       };
     } catch (e) {
-      print('=== ERROR in KosService.addKos ===');
-      print('Error type: ${e.runtimeType}');
-      print('Error message: $e');
       return {
         'status': 'error',
         'message': 'Gagal menambahkan kos. Silakan coba lagi. Error: $e',
@@ -97,16 +73,11 @@ class KosService {
     required String base64Image,
   }) async {
     try {
-      print('=== _uploadKosImageFromBase64 START ===');
       final fileName =
           'kos_${userId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      print('Generated filename: $fileName');
-      print('Base64 image length: ${base64Image.length}');
 
       final Uint8List fileBytes = base64Decode(base64Image);
-      print('Decoded bytes length: ${fileBytes.length}');
 
-      print('Uploading to bucket: ${SupabaseConfig.kosImagesBucket}');
       await SupabaseConfig.client.storage
           .from(SupabaseConfig.kosImagesBucket)
           .uploadBinary(fileName, fileBytes);
@@ -115,12 +86,8 @@ class KosService {
           .from(SupabaseConfig.kosImagesBucket)
           .getPublicUrl(fileName);
 
-      print('Upload successful! Public URL: $publicUrl');
       return publicUrl;
     } catch (e) {
-      print('=== ERROR in _uploadKosImageFromBase64 ===');
-      print('Error type: ${e.runtimeType}');
-      print('Error message: $e');
       return null;
     }
   }

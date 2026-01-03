@@ -13,10 +13,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   final TextEditingController _namaLengkapController = TextEditingController();
   final TextEditingController _noTeleponController = TextEditingController();
-  
+
   String _selectedRole = 'penyewa'; // Default role
   final AuthService _authService = AuthService();
   bool _isLoading = false;
@@ -38,7 +39,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final namaLengkap = _namaLengkapController.text.trim();
     final noTelepon = _noTeleponController.text.trim();
 
-    if (username.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+    if (username.isEmpty ||
+        email.isEmpty ||
+        password.isEmpty ||
+        confirmPassword.isEmpty) {
       setState(() {
         _errorMessage = 'Semua field wajib diisi.';
         _isLoading = false;
@@ -53,13 +57,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
       return;
     }
-    
-    if (password.length < 6) { // Contoh validasi password
-        setState(() {
-            _errorMessage = 'Password minimal 6 karakter.';
-            _isLoading = false;
-        });
-        return;
+
+    if (password.length < 6) {
+      // Contoh validasi password
+      setState(() {
+        _errorMessage = 'Password minimal 6 karakter.';
+        _isLoading = false;
+      });
+      return;
     }
 
     try {
@@ -79,14 +84,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
           SnackBar(
             content: Text(response['message'] ?? 'Registrasi berhasil!'),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             backgroundColor: Colors.green,
           ),
         );
         Navigator.pop(context); // Kembali ke LoginScreen
       } else {
         setState(() {
-          _errorMessage = response['message'] ?? 'Terjadi kesalahan saat registrasi.';
+          _errorMessage =
+              response['message'] ?? 'Terjadi kesalahan saat registrasi.';
         });
       }
     } catch (e) {
@@ -127,8 +134,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 borderRadius: BorderRadius.circular(20),
               ),
               elevation: 10,
-              shadowColor: Colors.black.withOpacity(0.3),
-              color: Colors.white.withOpacity(0.95),
+              shadowColor: Colors.black.withValues(alpha: 0.3),
+              color: Colors.white.withValues(alpha: 0.95),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
@@ -147,23 +154,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 16),
                       Text(
                         "Buat Akun Baru",
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey.shade800,
-                            ),
+                        style:
+                            Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey.shade800,
+                                ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         "Daftar untuk menemukan atau menyewakan kos.",
-                        style: Theme.of(context).textTheme.bodyMedium
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
                             ?.copyWith(color: Colors.grey.shade600),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 32),
-                      
-                      _buildTextField(_usernameController, 'Username', Icons.person),
+
+                      _buildTextField(
+                          _usernameController, 'Username', Icons.person),
                       const SizedBox(height: 15),
-                      _buildTextField(_emailController, 'Email', Icons.email, TextInputType.emailAddress),
+                      _buildTextField(_emailController, 'Email', Icons.email,
+                          TextInputType.emailAddress),
                       const SizedBox(height: 15),
                       // Panggilan untuk password field, meneruskan state dan callback
                       _buildTextField(
@@ -173,7 +185,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         null,
                         true, // isPassword: true
                         _isPasswordVisible, // currentPasswordVisibility
-                        () { // togglePasswordVisibility
+                        () {
+                          // togglePasswordVisibility
                           setState(() {
                             _isPasswordVisible = !_isPasswordVisible;
                           });
@@ -188,16 +201,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         null,
                         true, // isPassword: true
                         _isPasswordVisible, // currentPasswordVisibility (sama dengan password)
-                        () { // togglePasswordVisibility (sama dengan password)
+                        () {
+                          // togglePasswordVisibility (sama dengan password)
                           setState(() {
                             _isPasswordVisible = !_isPasswordVisible;
                           });
                         },
                       ),
                       const SizedBox(height: 15),
-                      _buildTextField(_namaLengkapController, 'Nama Lengkap (Opsional)', Icons.badge),
+                      _buildTextField(_namaLengkapController,
+                          'Nama Lengkap (Opsional)', Icons.badge),
                       const SizedBox(height: 15),
-                      _buildTextField(_noTeleponController, 'Nomor Telepon (Opsional)', Icons.phone, TextInputType.phone),
+                      _buildTextField(
+                          _noTeleponController,
+                          'Nomor Telepon (Opsional)',
+                          Icons.phone,
+                          TextInputType.phone),
                       const SizedBox(height: 20),
 
                       DropdownButtonFormField<String>(
@@ -212,8 +231,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           fillColor: Colors.grey.shade100,
                         ),
                         items: const [
-                          DropdownMenuItem(value: 'penyewa', child: Text('Penyewa Kos')),
-                          DropdownMenuItem(value: 'pemilik_kos', child: Text('Pemilik Kos')),
+                          DropdownMenuItem(
+                              value: 'penyewa', child: Text('Penyewa Kos')),
+                          DropdownMenuItem(
+                              value: 'pemilik_kos', child: Text('Pemilik Kos')),
                         ],
                         onChanged: (value) {
                           setState(() {
@@ -226,7 +247,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       if (_errorMessage != null)
                         Text(
                           _errorMessage!,
-                          style: const TextStyle(color: Colors.red, fontSize: 14),
+                          style:
+                              const TextStyle(color: Colors.red, fontSize: 14),
                           textAlign: TextAlign.center,
                         ),
                       const SizedBox(height: 10),
@@ -239,7 +261,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 onPressed: _register,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.blue.shade600,
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -274,7 +297,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     TextInputType? keyboardType,
     bool isPassword = false, // Menentukan apakah ini field password
     bool? currentPasswordVisibility, // State visibilitas password saat ini
-    VoidCallback? togglePasswordVisibility, // Callback untuk mengubah visibilitas password
+    VoidCallback?
+        togglePasswordVisibility, // Callback untuk mengubah visibilitas password
   ]) {
     return TextFormField(
       controller: controller,
@@ -293,9 +317,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
         suffixIcon: isPassword
             ? IconButton(
                 icon: Icon(
-                  (currentPasswordVisibility ?? false) ? Icons.visibility_off : Icons.visibility,
+                  (currentPasswordVisibility ?? false)
+                      ? Icons.visibility_off
+                      : Icons.visibility,
                 ),
-                onPressed: togglePasswordVisibility, // Menggunakan callback yang diteruskan
+                onPressed:
+                    togglePasswordVisibility, // Menggunakan callback yang diteruskan
               )
             : null,
       ),
@@ -306,7 +333,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           }
           return '$labelText tidak boleh kosong';
         }
-        if (labelText == 'Email' && !RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(val)) {
+        if (labelText == 'Email' &&
+            !RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(val)) {
           return 'Masukkan format email yang valid';
         }
         // Tambahkan validasi password khusus jika diperlukan di sini (selain panjang di _register())

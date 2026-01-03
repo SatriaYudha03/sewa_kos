@@ -14,10 +14,13 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen>
-    with SingleTickerProviderStateMixin { // Mixin untuk AnimationController
+    with SingleTickerProviderStateMixin {
+  // Mixin untuk AnimationController
   final _formKey = GlobalKey<FormState>(); // Kunci untuk form validation
-  final TextEditingController _usernameEmailController = TextEditingController(); // Controller untuk input username/email
-  final TextEditingController _passwordController = TextEditingController();     // Controller untuk input password
+  final TextEditingController _usernameEmailController =
+      TextEditingController(); // Controller untuk input username/email
+  final TextEditingController _passwordController =
+      TextEditingController(); // Controller untuk input password
 
   bool _isLoading = false; // Status loading saat proses login
   bool _isPasswordVisible = false; // Status visibilitas password
@@ -26,7 +29,8 @@ class _LoginScreenState extends State<LoginScreen>
   late Animation<double> _fadeAnimation; // Animasi fade
   late Animation<Offset> _slideAnimation; // Animasi slide
 
-  final AuthService _authService = AuthService(); // Instance AuthService untuk komunikasi API
+  final AuthService _authService =
+      AuthService(); // Instance AuthService untuk komunikasi API
 
   @override
   void initState() {
@@ -55,8 +59,9 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   void dispose() {
     _controller.dispose(); // Pastikan AnimationController di-dispose
-    _usernameEmailController.dispose(); // Pastikan TextEditingController di-dispose
-    _passwordController.dispose();     // Pastikan TextEditingController di-dispose
+    _usernameEmailController
+        .dispose(); // Pastikan TextEditingController di-dispose
+    _passwordController.dispose(); // Pastikan TextEditingController di-dispose
     super.dispose();
   }
 
@@ -102,8 +107,10 @@ class _LoginScreenState extends State<LoginScreen>
             SnackBar(
               content: Text(response['message']!),
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              backgroundColor: AppConstants.successColor, // Menggunakan konstanta warna
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+              backgroundColor:
+                  AppConstants.successColor, // Menggunakan konstanta warna
             ),
           );
 
@@ -113,17 +120,20 @@ class _LoginScreenState extends State<LoginScreen>
           // Navigasi ke MainAppShell dan hapus semua rute sebelumnya dari stack
           Navigator.pushAndRemoveUntil(
             context,
-            _createFadeRoute(MainAppShell(initialUserData: user)), // Kirim objek User
+            _createFadeRoute(
+                MainAppShell(initialUserData: user)), // Kirim objek User
             (route) => false,
           );
         } else {
-             // Ini seharusnya tidak terjadi jika status 'success' tapi user null
-            ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('Data pengguna tidak ditemukan setelah login berhasil.'),
-                    backgroundColor: AppConstants.errorColor, // Menggunakan konstanta warna
-                ),
-            );
+          // Ini seharusnya tidak terjadi jika status 'success' tapi user null
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content:
+                  Text('Data pengguna tidak ditemukan setelah login berhasil.'),
+              backgroundColor:
+                  AppConstants.errorColor, // Menggunakan konstanta warna
+            ),
+          );
         }
       } else {
         // Login gagal, tampilkan pesan error dari API
@@ -131,10 +141,14 @@ class _LoginScreenState extends State<LoginScreen>
           ..hideCurrentSnackBar()
           ..showSnackBar(
             SnackBar(
-              content: Text(response['message'] ?? AppConstants.loginFailedMessage), // Menggunakan konstanta pesan
+              content: Text(response['message'] ??
+                  AppConstants
+                      .loginFailedMessage), // Menggunakan konstanta pesan
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              backgroundColor: AppConstants.errorColor, // Menggunakan konstanta warna
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+              backgroundColor:
+                  AppConstants.errorColor, // Menggunakan konstanta warna
             ),
           );
       }
@@ -145,10 +159,13 @@ class _LoginScreenState extends State<LoginScreen>
         ..hideCurrentSnackBar()
         ..showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'), // Tampilkan pesan error dari exception
+            content: Text(
+                'Error: ${e.toString()}'), // Tampilkan pesan error dari exception
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            backgroundColor: AppConstants.errorColor, // Menggunakan konstanta warna
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            backgroundColor:
+                AppConstants.errorColor, // Menggunakan konstanta warna
           ),
         );
     } finally {
@@ -174,18 +191,20 @@ class _LoginScreenState extends State<LoginScreen>
         ),
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppConstants.defaultPadding), // Menggunakan konstanta padding
+            padding: const EdgeInsets.all(
+                AppConstants.defaultPadding), // Menggunakan konstanta padding
             child: SlideTransition(
               position: _slideAnimation,
               child: FadeTransition(
                 opacity: _fadeAnimation,
                 child: Card(
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius), // Menggunakan konstanta border radius
+                    borderRadius: BorderRadius.circular(AppConstants
+                        .defaultBorderRadius), // Menggunakan konstanta border radius
                   ),
                   elevation: 16,
-                  shadowColor: Colors.black.withOpacity(0.5),
-                  color: Colors.white.withOpacity(0.95),
+                  shadowColor: Colors.black.withValues(alpha: 0.5),
+                  color: Colors.white.withValues(alpha: 0.95),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 24,
@@ -201,21 +220,30 @@ class _LoginScreenState extends State<LoginScreen>
                             const Icon(
                               Icons.home_work_rounded,
                               size: 50,
-                              color: AppConstants.primaryColor, // Menggunakan konstanta warna
+                              color: AppConstants
+                                  .primaryColor, // Menggunakan konstanta warna
                             ),
                             const SizedBox(height: 16),
                             Text(
                               "Selamat Datang di ${AppConstants.appName}", // Menggunakan konstanta nama aplikasi
-                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineSmall
+                                  ?.copyWith(
                                     fontWeight: FontWeight.bold,
-                                    color: AppConstants.textColorPrimary, // Menggunakan konstanta warna
+                                    color: AppConstants
+                                        .textColorPrimary, // Menggunakan konstanta warna
                                   ),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               "Masuk untuk melanjutkan",
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(color: AppConstants.textColorSecondary), // Menggunakan konstanta warna
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                      color: AppConstants
+                                          .textColorSecondary), // Menggunakan konstanta warna
                             ),
                             const SizedBox(height: 32),
                             TextFormField(
@@ -224,23 +252,27 @@ class _LoginScreenState extends State<LoginScreen>
                                 labelText: 'Username atau Email',
                                 prefixIcon: const Icon(Icons.person_outline),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+                                  borderRadius: BorderRadius.circular(
+                                      AppConstants.defaultBorderRadius),
                                 ),
                                 filled: true,
                                 fillColor: Colors.grey.shade100,
                               ),
-                              validator: (val) =>
-                                  val!.isEmpty ? 'Username atau Email tidak boleh kosong' : null,
+                              validator: (val) => val!.isEmpty
+                                  ? 'Username atau Email tidak boleh kosong'
+                                  : null,
                             ),
                             const SizedBox(height: 16),
                             TextFormField(
                               controller: _passwordController,
-                              obscureText: !_isPasswordVisible, // Mengontrol visibilitas password
+                              obscureText:
+                                  !_isPasswordVisible, // Mengontrol visibilitas password
                               decoration: InputDecoration(
                                 labelText: 'Password',
                                 prefixIcon: const Icon(Icons.lock_outline),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+                                  borderRadius: BorderRadius.circular(
+                                      AppConstants.defaultBorderRadius),
                                 ),
                                 filled: true,
                                 fillColor: Colors.grey.shade100,
@@ -251,12 +283,14 @@ class _LoginScreenState extends State<LoginScreen>
                                         : Icons.visibility,
                                   ),
                                   onPressed: () {
-                                    setState(() => _isPasswordVisible = !_isPasswordVisible);
+                                    setState(() => _isPasswordVisible =
+                                        !_isPasswordVisible);
                                   },
                                 ),
                               ),
-                              validator: (val) =>
-                                  val!.isEmpty ? 'Password tidak boleh kosong' : null,
+                              validator: (val) => val!.isEmpty
+                                  ? 'Password tidak boleh kosong'
+                                  : null,
                             ),
                             const SizedBox(height: 24),
                             AnimatedSwitcher(
@@ -267,45 +301,57 @@ class _LoginScreenState extends State<LoginScreen>
                                   child: child,
                                 );
                               },
-                              child: _isLoading // Menampilkan CircularProgressIndicator saat loading
-                                  ? const CircularProgressIndicator(
-                                      key: ValueKey('loader'), // Kunci untuk AnimatedSwitcher
-                                    )
-                                  : SizedBox(
-                                      width: double.infinity,
-                                      child: ElevatedButton(
-                                        key: const ValueKey('button'), // Kunci untuk AnimatedSwitcher
-                                        onPressed: _login, // Panggil fungsi login
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppConstants.primaryColor, // Menggunakan konstanta warna
-                                          padding: const EdgeInsets.symmetric(vertical: 16),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+                              child:
+                                  _isLoading // Menampilkan CircularProgressIndicator saat loading
+                                      ? const CircularProgressIndicator(
+                                          key: ValueKey(
+                                              'loader'), // Kunci untuk AnimatedSwitcher
+                                        )
+                                      : SizedBox(
+                                          width: double.infinity,
+                                          child: ElevatedButton(
+                                            key: const ValueKey(
+                                                'button'), // Kunci untuk AnimatedSwitcher
+                                            onPressed:
+                                                _login, // Panggil fungsi login
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: AppConstants
+                                                  .primaryColor, // Menggunakan konstanta warna
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 16),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius
+                                                    .circular(AppConstants
+                                                        .defaultBorderRadius),
+                                              ),
+                                              elevation: 5,
+                                            ),
+                                            child: const Text(
+                                              "LOGIN",
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white,
+                                              ),
+                                            ),
                                           ),
-                                          elevation: 5,
                                         ),
-                                        child: const Text(
-                                          "LOGIN",
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
                             ),
                             const SizedBox(height: 16),
                             TextButton(
-                              onPressed: _isLoading // Nonaktifkan tombol saat loading
-                                  ? null
-                                  : () {
-                                      Navigator.push(
-                                        context,
-                                        _createFadeRoute(const RegisterScreen()), // Navigasi ke RegisterScreen
-                                      );
-                                    },
-                              child: const Text("Belum punya akun? Daftar di sini"),
+                              onPressed:
+                                  _isLoading // Nonaktifkan tombol saat loading
+                                      ? null
+                                      : () {
+                                          Navigator.push(
+                                            context,
+                                            _createFadeRoute(
+                                                const RegisterScreen()), // Navigasi ke RegisterScreen
+                                          );
+                                        },
+                              child: const Text(
+                                  "Belum punya akun? Daftar di sini"),
                             ),
                           ],
                         ),

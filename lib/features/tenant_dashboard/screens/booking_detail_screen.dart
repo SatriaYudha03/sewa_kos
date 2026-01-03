@@ -249,7 +249,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(AppConstants.defaultPadding * 1.5),
       decoration: BoxDecoration(
-        color: statusColor.withOpacity(0.1),
+        color: statusColor.withValues(alpha: 26),
         border: Border(
           bottom: BorderSide(
             color: statusColor,
@@ -393,15 +393,15 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppConstants.warningColor.withOpacity(0.1),
+              color: AppConstants.warningColor.withValues(alpha: 26),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: AppConstants.warningColor.withOpacity(0.3),
+                color: AppConstants.warningColor.withValues(alpha: 77),
               ),
             ),
             child: Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.info_outline,
                   color: AppConstants.warningColor,
                   size: 24,
@@ -435,11 +435,11 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: _getPaymentStatusColor(pembayaran.statusPembayaran)
-                .withOpacity(0.1),
+                .withValues(alpha: 26),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: _getPaymentStatusColor(pembayaran.statusPembayaran)
-                  .withOpacity(0.3),
+                  .withValues(alpha: 77),
             ),
           ),
           child: Row(
@@ -530,7 +530,8 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: AppConstants.textColorSecondary.withOpacity(0.3),
+                      color:
+                          AppConstants.textColorSecondary.withValues(alpha: 77),
                     ),
                   ),
                   child: ClipRRect(
@@ -554,13 +555,13 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.broken_image,
                                 size: 48,
                                 color: AppConstants.textColorSecondary,
                               ),
                               const SizedBox(height: 8),
-                              Text(
+                              const Text(
                                 'Gagal memuat gambar',
                                 style: TextStyle(
                                   color: AppConstants.textColorSecondary,
@@ -575,7 +576,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
+              const Text(
                 'Ketuk untuk memperbesar',
                 style: TextStyle(
                   fontSize: 12,
@@ -616,7 +617,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.broken_image,
                           size: 64,
                           color: Colors.white,
@@ -685,7 +686,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
+              color: Colors.grey.withValues(alpha: 51),
               spreadRadius: 1,
               blurRadius: 5,
               offset: const Offset(0, -3),

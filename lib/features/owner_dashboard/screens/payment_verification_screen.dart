@@ -313,7 +313,7 @@ class _PaymentVerificationScreenState extends State<PaymentVerificationScreen> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 4,
                     offset: const Offset(0, -2),
                   ),
@@ -516,7 +516,7 @@ class _PaymentVerificationScreenState extends State<PaymentVerificationScreen> {
                         ),
                         // Overlay untuk indikasi tap
                         Container(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           child: const Center(
                             child: Icon(
                               Icons.zoom_in,
@@ -570,7 +570,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
       extendBodyBehindAppBar: true,
       appBar: _showAppBar
           ? AppBar(
-              backgroundColor: Colors.black.withOpacity(0.5),
+              backgroundColor: Colors.black.withValues(alpha: 0.5),
               foregroundColor: Colors.white,
               elevation: 0,
               title: const Text('Bukti Pembayaran'),
@@ -598,7 +598,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                     color: Colors.white70,
                   ),
                   const SizedBox(height: 20),
-                  Text(
+                  const Text(
                     'Gagal memuat gambar',
                     style: TextStyle(
                       color: Colors.white70,
