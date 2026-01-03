@@ -2,7 +2,7 @@
 
 **Temukan Kos Impianmu**
 
-Aplikasi mobile untuk pencarian dan pengelolaan kos-kosan berbasis Flutter dengan backend PHP dan Supabase.
+Aplikasi mobile untuk pencarian dan pengelolaan kos-kosan berbasis Flutter dengan backend Supabase.
 
 ![Flutter](https://img.shields.io/badge/Flutter-3.0+-02569B?style=flat-square&logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.0+-0175C2?style=flat-square&logo=dart&logoColor=white)
@@ -99,13 +99,6 @@ lib/
 │   └── shared_features/         # Fitur bersama
 │       └── screens/
 │           └── main_app_shell.dart
-├── sewa_kos_api/                # API layer
-│   ├── auth/
-│   ├── kos/
-│   ├── kamar/
-│   ├── pemesanan/
-│   ├── pembayaran/
-│   └── uploads/
 └── themes/                      # Tema aplikasi
 ```
 
