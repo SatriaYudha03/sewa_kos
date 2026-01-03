@@ -27,6 +27,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _displayUser = widget.currentUser;
   }
 
+  @override
+  void didUpdateWidget(ProfileScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update _displayUser ketika currentUser berubah dari parent
+    if (widget.currentUser != oldWidget.currentUser) {
+      setState(() {
+        _displayUser = widget.currentUser;
+      });
+      debugPrint('ProfileScreen: _displayUser updated from parent');
+      debugPrint('New data: ${_displayUser.toJson()}');
+    }
+  }
+
   // Fungsi untuk menampilkan dialog edit profil
   Future<void> _showEditProfileDialog() async {
     final TextEditingController namaLengkapController =
@@ -89,6 +102,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   );
                   if (!context.mounted) return;
                   Navigator.pop(context); // Tutup dialog
+                  // Refresh data pengguna setelah berhasil update
+                  widget.onProfileUpdated();
                 }
               },
               child: const Text('Simpan'),
@@ -97,9 +112,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       },
     );
-
-    // Refresh data pengguna setelah dialog ditutup (jika ada perubahan)
-    widget.onProfileUpdated();
   }
 
   // Fungsi untuk mengupdate profil ke API
@@ -109,16 +121,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     try {
+      debugPrint('\n === UPDATE PROFILE DEBUG ===');
+      debugPrint('User ID: ${_displayUser.id}');
+      debugPrint('Current Nama Lengkap: ${_displayUser.namaLengkap}');
+      debugPrint('Current No Telepon: ${_displayUser.noTelepon}');
+      debugPrint('New Nama Lengkap: $namaLengkap');
+      debugPrint('New No Telepon: $noTelepon');
+
       final response = await _authService.updateUserProfile(
         userId: _displayUser.id,
         namaLengkap: namaLengkap,
         noTelepon: noTelepon,
       );
 
+      debugPrint('Response from AuthService: $response');
+
       if (mounted) {
         if (response['status'] == 'success') {
-          // Setelah berhasil update di server, _saveUserData sudah dipanggil di AuthService
-          // _displayUser akan diupdate saat MainAppShell memanggil onProfileUpdated dan refresh data
+          debugPrint('Update successful!');
+
+          // Fetch ulang user data dari SharedPreferences untuk update _displayUser
+          final updatedUser =
+              await _authService.getUserProfile(_displayUser.id);
+          if (updatedUser != null) {
+            setState(() {
+              _displayUser = updatedUser;
+            });
+            debugPrint(' _displayUser refreshed with new data');
+            debugPrint(' Updated nama_lengkap: ${_displayUser.namaLengkap}');
+            debugPrint(' Updated no_telepon: ${_displayUser.noTelepon}');
+          }
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
                 content:
@@ -126,6 +159,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 backgroundColor: AppConstants.successColor),
           );
         } else {
+          debugPrint('Update failed: ${response['message']}');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
                 content:
@@ -134,7 +168,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           );
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('ERROR in _updateProfile: ${e.toString()}');
+      debugPrint('Stack trace: $stackTrace');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -148,6 +184,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _isUpdating = false;
         });
       }
+      debugPrint('=== END UPDATE PROFILE DEBUG ===\n');
     }
   }
 

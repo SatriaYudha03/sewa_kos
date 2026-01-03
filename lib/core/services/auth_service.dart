@@ -33,8 +33,8 @@ class AuthService {
       final hashedPassword = _hashPassword(password);
 
       // Debug: Print untuk melihat hash password
-      debugPrint('🔐 Attempting login for: $usernameOrEmail');
-      debugPrint('🔑 Hashed password: $hashedPassword');
+      debugPrint('Attempting login for: $usernameOrEmail');
+      debugPrint('Hashed password: $hashedPassword');
 
       // Query ke Supabase untuk mencari user
       final response = await SupabaseConfig.client
@@ -44,7 +44,7 @@ class AuthService {
           .eq('password', hashedPassword)
           .maybeSingle();
 
-      debugPrint('📦 Supabase response: $response');
+      debugPrint('Supabase response: $response');
 
       if (response == null) {
         return {
@@ -62,16 +62,16 @@ class AuthService {
         'user': user,
       };
     } on PostgrestException catch (e) {
-      debugPrint('❌ PostgrestException: ${e.message}');
-      debugPrint('❌ Code: ${e.code}');
-      debugPrint('❌ Details: ${e.details}');
+      debugPrint('PostgrestException: ${e.message}');
+      debugPrint('Code: ${e.code}');
+      debugPrint('Details: ${e.details}');
       return {
         'status': 'error',
         'message': 'Database error: ${e.message}',
       };
     } catch (e, stackTrace) {
-      debugPrint('❌ Login error: $e');
-      debugPrint('❌ Stack trace: $stackTrace');
+      debugPrint('Login error: $e');
+      debugPrint('Stack trace: $stackTrace');
       return {
         'status': 'error',
         'message': 'Gagal terhubung ke server: ${e.toString()}',
@@ -90,7 +90,7 @@ class AuthService {
   }) async {
     try {
       debugPrint(
-          '📝 Attempting registration for: $username, $email, role: $role');
+          'Attempting registration for: $username, $email, role: $role');
 
       // Cek apakah username sudah ada
       final existingUsername = await SupabaseConfig.client
@@ -100,7 +100,7 @@ class AuthService {
           .maybeSingle();
 
       if (existingUsername != null) {
-        debugPrint('❌ Username already exists');
+        debugPrint('Username already exists');
         return {
           'status': 'error',
           'message': 'Username sudah digunakan.',
@@ -115,7 +115,7 @@ class AuthService {
           .maybeSingle();
 
       if (existingEmail != null) {
-        debugPrint('❌ Email already exists');
+        debugPrint('Email already exists');
         return {
           'status': 'error',
           'message': 'Email sudah digunakan.',
@@ -123,17 +123,17 @@ class AuthService {
       }
 
       // Dapatkan role_id berdasarkan role_name
-      debugPrint('🔍 Looking for role: $role');
+      debugPrint('Looking for role: $role');
       final roleData = await SupabaseConfig.client
           .from(SupabaseConfig.rolesTable)
           .select('id')
           .eq('role_name', role)
           .maybeSingle();
 
-      debugPrint('📦 Role data: $roleData');
+      debugPrint('Role data: $roleData');
 
       if (roleData == null) {
-        debugPrint('❌ Role not found: $role');
+        debugPrint('Role not found: $role');
         return {
           'status': 'error',
           'message':
@@ -144,7 +144,7 @@ class AuthService {
       final roleId = roleData['id'] as int;
       final hashedPassword = _hashPassword(password);
 
-      debugPrint('✅ Inserting new user with role_id: $roleId');
+      debugPrint('Inserting new user with role_id: $roleId');
 
       // Insert user baru
       await SupabaseConfig.client.from(SupabaseConfig.usersTable).insert({
@@ -156,23 +156,23 @@ class AuthService {
         'no_telepon': noTelepon,
       });
 
-      debugPrint('✅ Registration successful!');
+      debugPrint('Registration successful!');
 
       return {
         'status': 'success',
         'message': 'Registrasi berhasil! Silakan login.',
       };
     } on PostgrestException catch (e) {
-      debugPrint('❌ PostgrestException during registration: ${e.message}');
-      debugPrint('❌ Code: ${e.code}');
-      debugPrint('❌ Details: ${e.details}');
+      debugPrint('PostgrestException during registration: ${e.message}');
+      debugPrint('Code: ${e.code}');
+      debugPrint('Details: ${e.details}');
       return {
         'status': 'error',
         'message': 'Database error: ${e.message}',
       };
     } catch (e, stackTrace) {
-      debugPrint('❌ Registration error: $e');
-      debugPrint('❌ Stack trace: $stackTrace');
+      debugPrint('Registration error: $e');
+      debugPrint('Stack trace: $stackTrace');
       return {
         'status': 'error',
         'message': 'Gagal melakukan registrasi: ${e.toString()}',
@@ -234,6 +234,12 @@ class AuthService {
     String? noTelepon,
   }) async {
     try {
+      debugPrint('\n === AUTH SERVICE: updateUserProfile ===');
+      debugPrint('User ID: $userId');
+      debugPrint('Parameters received:');
+      debugPrint('- namaLengkap: $namaLengkap');
+      debugPrint('- noTelepon: $noTelepon');
+
       final Map<String, dynamic> updateData = {
         'updated_at': DateTime.now().toIso8601String(),
       };
@@ -241,32 +247,48 @@ class AuthService {
       if (namaLengkap != null) updateData['nama_lengkap'] = namaLengkap;
       if (noTelepon != null) updateData['no_telepon'] = noTelepon;
 
+      debugPrint('Update data to send: $updateData');
+
       if (updateData.length <= 1) {
+        debugPrint(' No changes detected (only updated_at field)');
         return {
           'status': 'info',
           'message': 'Tidak ada perubahan yang dikirim.',
         };
       }
 
-      await SupabaseConfig.client
+      debugPrint('Sending update to Supabase...');
+      final response = await SupabaseConfig.client
           .from(SupabaseConfig.usersTable)
           .update(updateData)
           .eq('id', userId);
 
+      debugPrint('✅ Supabase update response: $response');
+
       // Refresh data user yang tersimpan
+      debugPrint('Fetching updated user profile...');
       final updatedUser = await getUserProfile(userId);
+
       if (updatedUser != null) {
+        debugPrint('Updated user data: ${updatedUser.toJson()}');
         await _saveUserData(updatedUser);
+        debugPrint('User data saved to SharedPreferences');
+      } else {
+        debugPrint('Warning: Could not fetch updated user profile!');
       }
 
+      debugPrint('=== END updateUserProfile ===\n');
       return {
         'status': 'success',
         'message': 'Profil berhasil diperbarui.',
       };
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('ERROR in updateUserProfile: ${e.toString()}');
+      debugPrint('Stack trace: $stackTrace');
+      debugPrint('=== END updateUserProfile (with error) ===\n');
       return {
         'status': 'error',
-        'message': 'Gagal memperbarui profil. Silakan coba lagi.',
+        'message': 'Gagal memperbarui profil: ${e.toString()}',
       };
     }
   }
