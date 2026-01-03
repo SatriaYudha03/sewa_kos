@@ -6,6 +6,7 @@ import 'package:sewa_kos/core/constants/app_constants.dart';
 import 'package:sewa_kos/core/models/pemesanan_model.dart';
 import 'package:sewa_kos/core/services/pemesanan_service.dart';
 import 'package:sewa_kos/features/tenant_dashboard/screens/upload_payment_proof_screen.dart';
+import 'package:sewa_kos/features/tenant_dashboard/screens/booking_detail_screen.dart';
 
 class BookingHistoryScreen extends StatefulWidget {
   const BookingHistoryScreen({super.key});
@@ -31,10 +32,14 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   }
 
   void _navigateToBookingDetail(Pemesanan pemesanan) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text(
-              'Melihat detail pemesanan ${pemesanan.id} di ${pemesanan.namaKos}.')),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BookingDetailScreen(
+          pemesanan: pemesanan,
+          onRefresh: _fetchBookingHistory,
+        ),
+      ),
     );
   }
 
