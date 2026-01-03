@@ -6,6 +6,8 @@ library;
 import 'package:flutter/material.dart';
 import 'package:sewa_kos/core/constants/app_constants.dart';
 import 'package:sewa_kos/core/models/pemesanan_model.dart';
+import 'package:sewa_kos/core/models/pembayaran_model.dart';
+import 'package:sewa_kos/core/services/pembayaran_service.dart';
 import 'package:sewa_kos/features/tenant_dashboard/screens/upload_payment_proof_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -26,11 +28,15 @@ class BookingDetailScreen extends StatefulWidget {
 
 class _BookingDetailScreenState extends State<BookingDetailScreen> {
   bool _isLocaleInitialized = false;
+  final PembayaranService _pembayaranService = PembayaranService();
+  List<Pembayaran> _pembayaranList = [];
+  bool _isLoadingPembayaran = true;
 
   @override
   void initState() {
     super.initState();
     _initializeLocale();
+    _loadPembayaran();
   }
 
   Future<void> _initializeLocale() async {
@@ -39,6 +45,29 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
       setState(() {
         _isLocaleInitialized = true;
       });
+    }
+  }
+
+  Future<void> _loadPembayaran() async {
+    setState(() {
+      _isLoadingPembayaran = true;
+    });
+
+    try {
+      final pembayaranList = await _pembayaranService
+          .getPaymentsByPemesananId(widget.pemesanan.id);
+      if (mounted) {
+        setState(() {
+          _pembayaranList = pembayaranList;
+          _isLoadingPembayaran = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingPembayaran = false;
+        });
+      }
     }
   }
 
@@ -157,6 +186,11 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
 
             const Divider(thickness: 8, color: Color(0xFFF5F5F5)),
 
+            // Detail Pembayaran
+            _buildPaymentSection(context),
+
+            const Divider(thickness: 8, color: Color(0xFFF5F5F5)),
+
             // Informasi Tambahan
             _buildSection(
               context,
@@ -186,15 +220,39 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
   }
 
   Widget _buildStatusHeader(BuildContext context) {
+    // Gunakan status pembayaran jika ada dan pemesanan masih menunggu pembayaran
+    String statusText;
+    Color statusColor;
+    IconData statusIcon;
+    String statusDescription;
+
+    if (widget.pemesanan.statusPemesanan ==
+            StatusPemesanan.menungguPembayaran &&
+        _pembayaranList.isNotEmpty) {
+      // Jika ada pembayaran, gunakan status pembayaran
+      final pembayaran = _pembayaranList.first;
+      statusText = 'Status: ${pembayaran.statusPembayaran.displayName}';
+      statusColor = _getPaymentStatusColor(pembayaran.statusPembayaran);
+      statusIcon = _getPaymentStatusIcon(pembayaran.statusPembayaran);
+      statusDescription =
+          _getPaymentStatusDescription(pembayaran.statusPembayaran);
+    } else {
+      // Gunakan status pemesanan
+      statusText = 'Status: ${widget.pemesanan.statusPemesanan.displayName}';
+      statusColor = _getStatusColor(widget.pemesanan.statusPemesanan);
+      statusIcon = _getStatusIcon(widget.pemesanan.statusPemesanan);
+      statusDescription =
+          _getStatusDescription(widget.pemesanan.statusPemesanan);
+    }
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppConstants.defaultPadding * 1.5),
       decoration: BoxDecoration(
-        color:
-            _getStatusColor(widget.pemesanan.statusPemesanan).withOpacity(0.1),
+        color: statusColor.withOpacity(0.1),
         border: Border(
           bottom: BorderSide(
-            color: _getStatusColor(widget.pemesanan.statusPemesanan),
+            color: statusColor,
             width: 3,
           ),
         ),
@@ -202,22 +260,22 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
       child: Column(
         children: [
           Icon(
-            _getStatusIcon(widget.pemesanan.statusPemesanan),
+            statusIcon,
             size: 60,
-            color: _getStatusColor(widget.pemesanan.statusPemesanan),
+            color: statusColor,
           ),
           const SizedBox(height: 12),
           Text(
-            'Status: ${widget.pemesanan.statusPemesanan.displayName}',
+            statusText,
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: _getStatusColor(widget.pemesanan.statusPemesanan),
+              color: statusColor,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            _getStatusDescription(widget.pemesanan.statusPemesanan),
+            statusDescription,
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 14,
@@ -303,9 +361,324 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     );
   }
 
+  Widget _buildPaymentSection(BuildContext context) {
+    if (_isLoadingPembayaran) {
+      return Padding(
+        padding: const EdgeInsets.all(AppConstants.defaultPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Detail Pembayaran',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppConstants.textColorPrimary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Center(
+              child: CircularProgressIndicator(),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_pembayaranList.isEmpty) {
+      return _buildSection(
+        context,
+        title: 'Detail Pembayaran',
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppConstants.warningColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: AppConstants.warningColor.withOpacity(0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  color: AppConstants.warningColor,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Belum ada pembayaran untuk pemesanan ini.',
+                    style: TextStyle(
+                      color: Colors.grey[800],
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Ambil pembayaran terbaru
+    final pembayaran = _pembayaranList.first;
+
+    return _buildSection(
+      context,
+      title: 'Detail Pembayaran',
+      children: [
+        // Status Pembayaran
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: _getPaymentStatusColor(pembayaran.statusPembayaran)
+                .withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: _getPaymentStatusColor(pembayaran.statusPembayaran)
+                  .withOpacity(0.3),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                _getPaymentStatusIcon(pembayaran.statusPembayaran),
+                color: _getPaymentStatusColor(pembayaran.statusPembayaran),
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Status Pembayaran',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppConstants.textColorSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      pembayaran.statusPembayaran.displayName,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color:
+                            _getPaymentStatusColor(pembayaran.statusPembayaran),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Informasi Pembayaran
+        _buildInfoRow(
+          icon: Icons.attach_money,
+          label: 'Jumlah Pembayaran',
+          value: _formatCurrency(pembayaran.jumlahBayar),
+          isHighlight: true,
+        ),
+        if (pembayaran.jenisPembayaran != null)
+          _buildInfoRow(
+            icon: Icons.category,
+            label: 'Jenis Pembayaran',
+            value: pembayaran.jenisPembayaran!,
+          ),
+        if (pembayaran.metodePembayaran != null)
+          _buildInfoRow(
+            icon: Icons.payment,
+            label: 'Metode Pembayaran',
+            value: pembayaran.metodePembayaran!,
+          ),
+        if (pembayaran.tanggalPembayaran != null)
+          _buildInfoRow(
+            icon: Icons.calendar_today,
+            label: 'Tanggal Upload',
+            value: _formatDateTime(pembayaran.tanggalPembayaran!),
+          ),
+
+        // Bukti Pembayaran
+        if (pembayaran.buktiTransferUrl != null &&
+            pembayaran.buktiTransferUrl!.isNotEmpty)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Bukti Pembayaran',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppConstants.textColorSecondary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: () {
+                  _showPaymentProofDialog(
+                      context, pembayaran.buktiTransferUrl!);
+                },
+                child: Container(
+                  height: 200,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppConstants.textColorSecondary.withOpacity(0.3),
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      pembayaran.buktiTransferUrl!,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Center(
+                          child: CircularProgressIndicator(
+                            value: loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                                : null,
+                          ),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.broken_image,
+                                size: 48,
+                                color: AppConstants.textColorSecondary,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Gagal memuat gambar',
+                                style: TextStyle(
+                                  color: AppConstants.textColorSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Ketuk untuk memperbesar',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppConstants.textColorSecondary,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+
+  void _showPaymentProofDialog(BuildContext context, String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Align(
+              alignment: Alignment.topRight,
+              child: IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+              ),
+            ),
+            InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.broken_image,
+                          size: 64,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Gagal memuat gambar',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _getPaymentStatusColor(StatusPembayaran status) {
+    switch (status) {
+      case StatusPembayaran.menungguVerifikasi:
+        return AppConstants.warningColor;
+      case StatusPembayaran.terverifikasi:
+        return AppConstants.successColor;
+      case StatusPembayaran.gagal:
+        return AppConstants.errorColor;
+    }
+  }
+
+  IconData _getPaymentStatusIcon(StatusPembayaran status) {
+    switch (status) {
+      case StatusPembayaran.menungguVerifikasi:
+        return Icons.pending_actions;
+      case StatusPembayaran.terverifikasi:
+        return Icons.check_circle;
+      case StatusPembayaran.gagal:
+        return Icons.cancel;
+    }
+  }
+
+  String _getPaymentStatusDescription(StatusPembayaran status) {
+    switch (status) {
+      case StatusPembayaran.menungguVerifikasi:
+        return 'Bukti pembayaran telah diupload. Menunggu verifikasi dari pemilik kos.';
+      case StatusPembayaran.terverifikasi:
+        return 'Pembayaran Anda telah diverifikasi oleh pemilik kos';
+      case StatusPembayaran.gagal:
+        return 'Pembayaran ditolak. Silakan upload ulang bukti pembayaran yang valid.';
+    }
+  }
+
   Widget? _buildBottomAction(BuildContext context) {
     if (widget.pemesanan.statusPemesanan ==
         StatusPemesanan.menungguPembayaran) {
+      // Jika sudah ada pembayaran, tidak perlu tampilkan tombol upload lagi
+      if (_pembayaranList.isNotEmpty) {
+        return null;
+      }
+
       return Container(
         padding: const EdgeInsets.all(AppConstants.defaultPadding),
         decoration: BoxDecoration(
@@ -327,6 +700,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                 builder: (context) => UploadPaymentProofScreen(
                   pemesanan: widget.pemesanan,
                   onProofUploaded: () {
+                    _loadPembayaran(); // Reload pembayaran setelah upload
                     if (widget.onRefresh != null) widget.onRefresh!();
                     Navigator.pop(context);
                   },
@@ -384,6 +758,16 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
   String _getStatusDescription(StatusPemesanan status) {
     switch (status) {
       case StatusPemesanan.menungguPembayaran:
+        // Jika sudah ada pembayaran yang diupload, ubah deskripsinya
+        if (_pembayaranList.isNotEmpty) {
+          final pembayaran = _pembayaranList.first;
+          if (pembayaran.statusPembayaran ==
+              StatusPembayaran.menungguVerifikasi) {
+            return 'Bukti pembayaran telah diupload. Menunggu verifikasi dari pemilik kos.';
+          } else if (pembayaran.statusPembayaran == StatusPembayaran.gagal) {
+            return 'Pembayaran ditolak. Silakan upload ulang bukti pembayaran yang valid.';
+          }
+        }
         return 'Silakan lakukan pembayaran dan upload bukti pembayaran';
       case StatusPemesanan.terkonfirmasi:
         return 'Pemesanan Anda telah dikonfirmasi oleh pemilik kos';

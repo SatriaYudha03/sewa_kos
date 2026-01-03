@@ -4,7 +4,9 @@ library;
 import 'package:flutter/material.dart';
 import 'package:sewa_kos/core/constants/app_constants.dart';
 import 'package:sewa_kos/core/models/pemesanan_model.dart';
+import 'package:sewa_kos/core/models/pembayaran_model.dart';
 import 'package:sewa_kos/core/services/pemesanan_service.dart';
+import 'package:sewa_kos/core/services/pembayaran_service.dart';
 import 'package:sewa_kos/features/tenant_dashboard/screens/upload_payment_proof_screen.dart';
 import 'package:sewa_kos/features/tenant_dashboard/screens/booking_detail_screen.dart';
 
@@ -17,7 +19,10 @@ class BookingHistoryScreen extends StatefulWidget {
 
 class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   final PemesananService _pemesananService = PemesananService();
+  final PembayaranService _pembayaranService = PembayaranService();
   Future<List<Pemesanan>>? _bookingHistoryFuture;
+  Map<int, List<Pembayaran>> _pembayaranMap =
+      {}; // Map pemesananId -> List<Pembayaran>
 
   @override
   void initState() {
@@ -29,6 +34,19 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     setState(() {
       _bookingHistoryFuture = _pemesananService.getMyPemesanan();
     });
+
+    // Load pembayaran untuk setiap pemesanan
+    final bookings = await _bookingHistoryFuture;
+    if (bookings != null) {
+      for (var booking in bookings) {
+        final pembayaranList =
+            await _pembayaranService.getPaymentsByPemesananId(booking.id);
+        _pembayaranMap[booking.id] = pembayaranList;
+      }
+      if (mounted) {
+        setState(() {}); // Refresh untuk update status
+      }
+    }
   }
 
   void _navigateToBookingDetail(Pemesanan pemesanan) {
@@ -136,6 +154,35 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   }
 
   Widget _buildPemesananCard(Pemesanan pemesanan) {
+    // Tentukan status yang akan ditampilkan
+    String statusText;
+    Color statusColor;
+    bool showPaymentButton = false;
+
+    // Ambil pembayaran jika ada
+    final pembayaranList = _pembayaranMap[pemesanan.id] ?? [];
+
+    if (pemesanan.statusPemesanan == StatusPemesanan.menungguPembayaran &&
+        pembayaranList.isNotEmpty) {
+      // Jika ada pembayaran, gunakan status pembayaran
+      final pembayaran = pembayaranList.first;
+      statusText = pembayaran.statusPembayaran.displayName;
+      statusColor = _getPaymentStatusColor(pembayaran.statusPembayaran);
+      // Tidak tampilkan tombol payment jika sudah ada bukti
+      showPaymentButton = false;
+    } else if (pemesanan.statusPemesanan ==
+        StatusPemesanan.menungguPembayaran) {
+      // Belum ada pembayaran
+      statusText = pemesanan.statusPemesanan.displayName;
+      statusColor = _getStatusColor(pemesanan.statusPemesanan);
+      showPaymentButton = true;
+    } else {
+      // Status lainnya (terkonfirmasi, dibatalkan, selesai)
+      statusText = pemesanan.statusPemesanan.displayName;
+      statusColor = _getStatusColor(pemesanan.statusPemesanan);
+      showPaymentButton = false;
+    }
+
     return Card(
       margin:
           const EdgeInsets.symmetric(vertical: AppConstants.defaultMargin / 2),
@@ -160,16 +207,15 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
             Text('Total: Rp ${pemesanan.totalHarga.toStringAsFixed(0)}'),
             const SizedBox(height: 4),
             Text(
-              'Status: ${pemesanan.statusPemesanan.displayName}',
+              'Status: $statusText',
               style: TextStyle(
-                color: _getStatusColor(pemesanan.statusPemesanan),
+                color: statusColor,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ],
         ),
-        trailing: (pemesanan.statusPemesanan ==
-                StatusPemesanan.menungguPembayaran)
+        trailing: showPaymentButton
             ? IconButton(
                 icon:
                     const Icon(Icons.payment, color: AppConstants.accentColor),
@@ -194,6 +240,17 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
         return Colors.red;
       case StatusPemesanan.selesai:
         return Colors.grey;
+    }
+  }
+
+  Color _getPaymentStatusColor(StatusPembayaran status) {
+    switch (status) {
+      case StatusPembayaran.menungguVerifikasi:
+        return Colors.orange;
+      case StatusPembayaran.terverifikasi:
+        return Colors.green;
+      case StatusPembayaran.gagal:
+        return Colors.red;
     }
   }
 }
